@@ -1,0 +1,8 @@
+#Siege Test URL file
+http://localhost:80/api/v1/users/ PUT "{\"username\":\"username\",\"password\":\"password\"}"
+http://localhost:80/api/v1/users/hello DELETE
+http://localhost:80/api/v1/rides/ POST "{\"created_by\":\"username\",\"timestamp\":\"tstamp\",\"source\":\"source\",\"destination\":\"destination\"}"
+http://localhost:80/api/v1/rides?source="source"&destination="dest" GET
+http://localhost:80/api/v1/rides/21 GET
+http://localhost:80/api/v1/rides/21 POST "{\"username\":\"username\"}"
+http://localhost:80/api/v1/rides/21 DELETE
