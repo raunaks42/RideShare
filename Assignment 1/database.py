@@ -15,16 +15,16 @@ class DataBase:
 		)
 
 		rides = Table('rides', metadata,
-			Column('rideId', Integer, primary_key=True),
-			Column('created_by', None, ForeignKey('users.username')),
+			Column('rideId', Integer, autoincrement=True, primary_key=True),
+			Column('created_by', None, ForeignKey('users.username', ondelete='CASCADE')),
 			Column('timestamp', String, nullable=False),
 			Column('source', Integer, nullable=False),
 			Column('destination', Integer, nullable=False)
 		)
 
 		riders = Table('riders', metadata,
-			Column('rideId', None, ForeignKey('rides.rideId'), primary_key=True),
-			Column('user', None, ForeignKey('users.username'), primary_key=True)
+			Column('rideId', None, ForeignKey('rides.rideId', ondelete='CASCADE'), primary_key=True),
+			Column('user', None, ForeignKey('users.username', ondelete='CASCADE'), primary_key=True)
 		)
 
 		try:

@@ -16,19 +16,13 @@ URL = "http://localhost:"+str(port)
 
 def sha1(value):
     if len(value)==40:
-        try:
-            int(value,16)
-            return value
-        except:
-            abort(400)
-    abort(400)
+        int(value,16)
+        return value
+    raise ValueError('Length is not 40')
 
 def mydatetime(value):
-    try:
-        datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
-        return value
-    except:
-        abort(400)
+    datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
+    return value
 
 class Users(Resource):
     def __init__(self):
@@ -38,7 +32,7 @@ class Users(Resource):
         super(Users, self).__init__()
 
     def put(self):
-        args = self.reqparser.parse_args(strict = True) #400 if extra args or less args
+        args = self.reqparser.parse_args(strict = True) #400 if extra or less fields, non sha1 password
         username = args['username']
         password = args['password']
         req = {
@@ -50,7 +44,7 @@ class Users(Resource):
             }
         }
         res = post(URL+"/api/v1/db/write", json = req)
-        return {}, (201 if res.status_code==200 else 405)
+        return {}, (201 if res.status_code==200 else 405) #405 if insert fail
 
 
 class User(Resource):
@@ -72,10 +66,10 @@ class User(Resource):
                         'username': username
                     }
                 }
-                resd = post(URL+"/api/v1/db/write", json = req)
-                return {}, (200 if resd.status_code==200 else 405)
-            return {}, 405
-        return {}, 400
+                post(URL+"/api/v1/db/write", json = req)
+                return {}, 200 
+            return {}, 405 #username doesnt exist
+        return {}, 400 #non empty request json
 
 
 class Rides(Resource):
@@ -88,26 +82,18 @@ class Rides(Resource):
         super(Rides, self).__init__()
 
     def post(self):
-        args = self.reqparser.parse_args(strict = True)
+        args = self.reqparser.parse_args(strict = True) #400 if incorrect timestamp format, any extra/less fields
         created_by = args['created_by']
         timestamp = args['timestamp']
         source = args['source']
         destination = args['destination']
         
         enum = pd.read_csv('AreaNameEnum.csv')
-        if source in enum['Area No'] and destination in enum['Area No']:
-            del enum
-            req = {
-                'table':'rides',
-                'columns': ['MAX(rideId)']
-            }
-            res = post(URL+"/api/v1/db/read", json = req)
-            rideId = (res.json()['MAX(rideId)']+1 if res.status_code==200 else 1)
+        if source in enum['Area No'] and destination in enum['Area No'] and source!=destination:
             req = {
                 'query': 'insert',
                 'table': 'rides',
                 'values': {
-                    'rideId': rideId,
                     'created_by': created_by,
                     'timestamp': timestamp,
                     'source': source,
@@ -115,16 +101,15 @@ class Rides(Resource):
                 }
             }
             res1 = post(URL+"/api/v1/db/write", json = req)
-            return {}, (201 if res1.status_code==200 else 405)
-        return {}, 405
+            return {}, (201 if res1.status_code==200 else 405) #405 if given username doesnt exist
+        return {}, 405 #if source/destination same or incorrect
 
 
 class RideSD(Resource):
     def get(self, source, destination):
         if not request.json:
             enum = pd.read_csv('AreaNameEnum.csv')
-            if source in enum['Area No'] and destination in enum['Area No']:
-                del enum
+            if source in enum['Area No'] and destination in enum['Area No'] and source!=destination:
                 req = {
                     'table': 'rides',
                     'columns': ['rideId', 'created_by', 'timestamp'],
@@ -134,11 +119,12 @@ class RideSD(Resource):
                     }
                 }
                 res=post(URL+"/api/v1/db/read", json = req)
-                res_json=res.json()
-                res_json['username']=res_json.pop('created_by')
-                return ({}, 405) if res.status_code==400 else ( (res_json, 200) if res_json else ({}, 204) )
-            return {}, 405
-        return {}, 400
+                res_json=[ride for ride in res.json() if datetime.strptime(ride['timestamp'], '%d-%m-%Y:%S-%M-%H') > datetime.now()]
+                for ride in res_json:
+                    ride['username']=ride.pop('created_by')
+                return (res_json, 200) if res_json else ({}, 204) #204 if no rides
+            return {}, 405 #if source/destination same or incorrect
+        return {}, 400 #if non empty request body
 
 class RideID(Resource):
     def get(self, id):
@@ -151,27 +137,26 @@ class RideID(Resource):
                 }
             }
             res = post(URL+"/api/v1/db/read", json = req)
-            if res.status_code==200:
-                if res.json():
-                    res_json=res.json()
-                    req = {
-                        'table': 'riders',
-                        'columns': ['user'],
-                        'condition': {
-                            'rideId': id
-                        }
+            if res.json():
+                res_json=res.json()[0]
+                req = {
+                    'table': 'riders',
+                    'columns': ['user'],
+                    'condition': {
+                        'rideId': id
                     }
-                    resr = post(URL+"/api/v1/db/read", json = req)
-                    res_json['users']=list(resr.json().values())
-                    return res_json, 200
-                return {}, 204
-            return {}, 405
-        return {}, 400
+                }
+                resr = post(URL+"/api/v1/db/read", json = req)
+                res_json['users']=[i['user'] for i in resr]
+                return res_json, 200
+            return {}, 204 #if no rides found
+        return {}, 400 #if request json is not empty
+        #idk 405 here
 
     def post(self, id):
         reqparser = reqparse.RequestParser()
         reqparser.add_argument('username', type = str, required = True)
-        args = reqparser.parse_args(strict = True)
+        args = reqparser.parse_args(strict = True) #400 if any extra or less fields
         username = args['username']
         req = {
             'table': 'rides',
@@ -181,7 +166,7 @@ class RideID(Resource):
             }
         }
         res = post(URL+"/api/v1/db/read", json = req)
-        if res.status_code==200:
+        if res.json():
             req = {
                 'query': 'insert',
                 'table': 'riders',
@@ -191,8 +176,8 @@ class RideID(Resource):
                 }
             }
             resw = post(URL+"/api/v1/db/write", json = req)
-            return {}, (200 if resw.status_code==200 else 405)
-        return {}, 204
+            return {}, (200 if resw.status_code==200 else 405) #405 if user not found or user already joined ride
+        return {}, 204 #ride not found
 
     def delete(self, id):
         if not request.json:
@@ -212,10 +197,10 @@ class RideID(Resource):
                         'rideId': id
                     }
                 }
-                resd=post(URL+"/api/v1/db/write", json = req)
-                return {}, (200 if resd.status_code==200 else 405)
-            return {}, 405
-        return {}, 400
+                post(URL+"/api/v1/db/write", json = req)
+                return {}, 200
+            return {}, 405 #if ride not found
+        return {}, 400 #if request json not empty
 
 class DBWrite(Resource):
     def __init__(self):
@@ -247,10 +232,8 @@ class DBWrite(Resource):
                 delete_query = '''
                     DELETE FROM ''' + table + '''
                     WHERE ''' + ' AND '.join(map(lambda x, y: x+'='+repr(y), condition.keys(), condition.values()))
-                execres=execute(delete_query)
-                print(execres)
-                if execres:
-                    return {}, 200
+                execute(delete_query)
+                return {}, 200
             return {}, 400
 
 class DBRead(Resource):
@@ -271,11 +254,10 @@ class DBRead(Resource):
                 FROM ''' + table + '''
                 ''' + ('WHERE ' + ' AND '.join(map(lambda x, y: x+'='+repr(y), args['condition'].keys(), args['condition'].values())) if 'condition' in args else '')
             rows = fetchall(select_query)
-            if rows:
-                res = []
-                for row in rows:
-                    res.append({columns[i]: row[i] for i in range(len(columns))})
-                return res, 200
+            res = []
+            for row in rows:
+                res.append({columns[i]: row[i] for i in range(len(columns))})
+            return res, 200
         return {}, 400
 
 
