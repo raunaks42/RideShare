@@ -57,14 +57,24 @@ class User(Resource):
     def delete(self, username):
         if not request.json:
             req = {
-                'query': 'delete',
                 'table': 'users',
+                'columns': ['username'],
                 'condition': {
-                    'username':username
+                    'username': username
                 }
             }
-            res = post(URL+"/api/v1/db/write", json = req)
-            return {}, (200 if res.status_code==200 else 405)
+            res = post(URL+"/api/v1/db/read", json = req)
+            if res.json():
+                req = {
+                    'query': 'delete',
+                    'table': 'users',
+                    'condition': {
+                        'username': username
+                    }
+                }
+                resd = post(URL+"/api/v1/db/write", json = req)
+                return {}, (200 if resd.status_code==200 else 405)
+            return {}, 405
         return {}, 400
 
 
@@ -181,23 +191,29 @@ class RideID(Resource):
                 }
             }
             resw = post(URL+"/api/v1/db/write", json = req)
-            if resw.status_code==200:
-                return {}, 200
-            return {}, 405
+            return {}, (200 if resw.status_code==200 else 405)
         return {}, 204
 
     def delete(self, id):
         if not request.json:
             req = {
-                'query': 'delete',
-                'table': 'riders',
+                'table': 'rides',
+                'columns': ['rideId'],
                 'condition': {
                     'rideId': id
                 }
             }
-            res=post(URL+"/api/v1/db/write", json = req)
-            if res.status_code==200:
-                return {}, 200
+            res = post(URL+"/api/v1/db/read", json = req)
+            if res.json():
+                req = {
+                    'query': 'delete',
+                    'table': 'riders',
+                    'condition': {
+                        'rideId': id
+                    }
+                }
+                resd=post(URL+"/api/v1/db/write", json = req)
+                return {}, (200 if resd.status_code==200 else 405)
             return {}, 405
         return {}, 400
 
@@ -231,7 +247,9 @@ class DBWrite(Resource):
                 delete_query = '''
                     DELETE FROM ''' + table + '''
                     WHERE ''' + ' AND '.join(map(lambda x, y: x+'='+repr(y), condition.keys(), condition.values()))
-                if execute(delete_query):
+                execres=execute(delete_query)
+                print(execres)
+                if execres:
                     return {}, 200
             return {}, 400
 
@@ -271,5 +289,5 @@ api.add_resource(DBRead, '/api/v1/db/read')
 
 
 if __name__ == '__main__':
-	app.run(port = port)
+	app.run(port = port, debug=True)
 
