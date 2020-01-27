@@ -1,5 +1,6 @@
 from datetime import datetime
 from random import random
+import pandas as pd
 
 from flask import Flask, jsonify, abort, request
 from flask_restful import Api, Resource, reqparse
@@ -10,8 +11,8 @@ from database import execute, fetchone, fetchall
 app = Flask(__name__)
 api = Api(app)
 
-port=80
-URL="http://localhost:"+str(port)
+port = 4000
+URL = "http://localhost:"+str(port)
 
 def sha1(value):
     if len(value)==40:
@@ -82,49 +83,51 @@ class Rides(Resource):
         timestamp = args['timestamp']
         source = args['source']
         destination = args['destination']
-        req = {
-            'table':'rides',
-            'columns': ['MAX(rideId)']
-        }
-        res = post(URL+"/api/v1/db/read", json = req)
-        rideId = (res.json()['MAX(rideId)']+1 if res.status_code==200 else 1)
-        req = {
-            'query': 'insert',
-            'table': 'rides',
-            'values': {
-                'rideId': rideId,
-                'created_by': created_by,
-                'timestamp': timestamp,
-                'source': source,
-                'destination': destination
+        
+        enum = pd.read_csv('AreaNameEnum.csv')
+        if source in enum['Area No'] and destination in enum['Area No']:
+            del enum
+            req = {
+                'table':'rides',
+                'columns': ['MAX(rideId)']
             }
-        }
-        res1 = post(URL+"/api/v1/db/write", json = req)
-        req = {
-            'query': 'insert',
-            'table': 'riders',
-            'values': {
-                'rideId': rideId,
-                'username': created_by
+            res = post(URL+"/api/v1/db/read", json = req)
+            rideId = (res.json()['MAX(rideId)']+1 if res.status_code==200 else 1)
+            req = {
+                'query': 'insert',
+                'table': 'rides',
+                'values': {
+                    'rideId': rideId,
+                    'created_by': created_by,
+                    'timestamp': timestamp,
+                    'source': source,
+                    'destination': destination
+                }
             }
-        }
-        post(URL+"/api/v1/db/write", json = req)
-        return {}, (201 if res1.status_code==200 else 405)
+            res1 = post(URL+"/api/v1/db/write", json = req)
+            return {}, (201 if res1.status_code==200 else 405)
+        return {}, 405
 
 
 class RideSD(Resource):
     def get(self, source, destination):
         if not request.json:
-            req = {
-                'table': 'rides',
-                'columns': ['rideId', 'createdBy', 'timestamp'],
-                'condition': {
-                    'source': source,
-                    'destination': destination
+            enum = pd.read_csv('AreaNameEnum.csv')
+            if source in enum['Area No'] and destination in enum['Area No']:
+                del enum
+                req = {
+                    'table': 'rides',
+                    'columns': ['rideId', 'created_by', 'timestamp'],
+                    'condition': {
+                        'source': source,
+                        'destination': destination
+                    }
                 }
-            }
-            res=post(URL+"/api/v1/db/read", json = req)
-            return ( ({}, 405) if res.status_code==400 else ( (res.json(), 200) if res.json() else ({}, 204) ) )
+                res=post(URL+"/api/v1/db/read", json = req)
+                res_json=res.json()
+                res_json['username']=res_json.pop('created_by')
+                return ({}, 405) if res.status_code==400 else ( (res_json, 200) if res_json else ({}, 204) )
+            return {}, 405
         return {}, 400
 
 class RideID(Resource):
@@ -259,7 +262,7 @@ class DBRead(Resource):
 
 
 api.add_resource(Users, '/api/v1/users')
-api.add_resource(User, '/api/v1/users/<str:username>')
+api.add_resource(User, '/api/v1/users/<string:username>')
 api.add_resource(Rides, '/api/v1/rides')
 api.add_resource(RideSD, '/api/v1/rides?source=<int:source>&destination=<int:destination>')
 api.add_resource(RideID, '/api/v1/rides/<int:id>')
@@ -268,4 +271,5 @@ api.add_resource(DBRead, '/api/v1/db/read')
 
 
 if __name__ == '__main__':
-	app.run(port=port)
+	app.run(port = port)
+
