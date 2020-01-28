@@ -41,6 +41,7 @@ class Argument(reqparse.Argument):
         msg={}
         if current_app.config.get("BUNDLE_ERRORS", False) or bundle_errors:
             return error, msg
+        #flask_restful.abort(400, message=msg)
         try:
             abort(400)
         except HTTPException as e:
@@ -75,6 +76,8 @@ class RequestParser(reqparse.RequestParser):
             flask_restful.abort(http_error_code, message=errors)
 
         if strict and req.unparsed_arguments:
+            #raise exceptions.BadRequest('Unknown arguments: %s'
+                                        #% ', '.join(req.unparsed_arguments.keys()))
             try:
                 abort(400)
             except HTTPException as e:
