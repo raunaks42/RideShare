@@ -4,6 +4,7 @@ import pandas as pd
 
 from flask import Flask, jsonify, request, current_app, abort
 from flask_restful import Api, Resource, reqparse
+import flask_restful
 from requests import post
 from werkzeug.exceptions import HTTPException
 
@@ -45,10 +46,46 @@ class Argument(reqparse.Argument):
         except HTTPException as e:
             e.data={}
             raise
+        
+class RequestParser(reqparse.RequestParser):
+    def parse_args(self, req=None, strict=False, http_error_code=400):
+        """Parse all arguments from the provided request and return the results
+        as a Namespace
+        :param req: Can be used to overwrite request from Flask
+        :param strict: if req includes args not in parser, throw 400 BadRequest exception
+        :param http_error_code: use custom error code for `flask_restful.abort()`
+        """
+        if req is None:
+            req = request
+
+        namespace = self.namespace_class()
+
+        # A record of arguments not yet parsed; as each is found
+        # among self.args, it will be popped out
+        req.unparsed_arguments = dict(self.argument_class('').source(req)) if strict else {}
+        errors = {}
+        for arg in self.args:
+            value, found = arg.parse(req, self.bundle_errors)
+            if isinstance(value, ValueError):
+                errors.update(found)
+                found = None
+            if found or arg.store_missing:
+                namespace[arg.dest or arg.name] = value
+        if errors:
+            flask_restful.abort(http_error_code, message=errors)
+
+        if strict and req.unparsed_arguments:
+            try:
+                abort(400)
+            except HTTPException as e:
+                e.data={}
+                raise
+
+        return namespace
 
 class Users(Resource):
     def __init__(self):
-        self.reqparser = reqparse.RequestParser()
+        self.reqparser = RequestParser()
         self.reqparser.add_argument(Argument('username', type = str, required = True))
         self.reqparser.add_argument(Argument('password', type = sha1, required = True))
         super(Users, self).__init__()
@@ -96,7 +133,7 @@ class User(Resource):
 
 class Rides(Resource):
     def __init__(self):
-        self.reqparser = reqparse.RequestParser()
+        self.reqparser = RequestParser()
         self.reqparser.add_argument(Argument('created_by', type = str, required = True))
         self.reqparser.add_argument(Argument('timestamp', type = mydatetime, required = True))
         self.reqparser.add_argument(Argument('source', type = int, required = True))
@@ -176,7 +213,7 @@ class RideID(Resource):
         #idk 405 here
 
     def post(self, id):
-        reqparser = reqparse.RequestParser()
+        reqparser = RequestParser()
         reqparser.add_argument(Argument('username', type = str, required = True))
         args = reqparser.parse_args(strict = True) #400 if any extra or less fields
         username = args['username']
@@ -226,7 +263,7 @@ class RideID(Resource):
 
 class DBWrite(Resource):
     def __init__(self):
-        self.reqparser = reqparse.RequestParser()
+        self.reqparser = RequestParser()
         self.reqparser.add_argument(Argument('query', type = str, required = True))
         self.reqparser.add_argument(Argument('table', type = str, required = True))
         self.reqparser.add_argument(Argument('values', type = dict))
@@ -260,7 +297,7 @@ class DBWrite(Resource):
 
 class DBRead(Resource):
     def __init__(self):
-        self.reqparser = reqparse.RequestParser()
+        self.reqparser = RequestParser()
         self.reqparser.add_argument(Argument('table', type = str, required = True))
         self.reqparser.add_argument(Argument('columns', type = list))
         self.reqparser.add_argument(Argument('condition', type = dict))
