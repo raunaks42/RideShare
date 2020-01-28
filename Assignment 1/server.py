@@ -2,9 +2,10 @@ from datetime import datetime
 from random import random
 import pandas as pd
 
-from flask import Flask, jsonify, abort, request
+from flask import Flask, jsonify, request, current_app, abort
 from flask_restful import Api, Resource, reqparse
 from requests import post
+from werkzeug.exceptions import HTTPException
 
 from database import execute, fetchone, fetchall
 
@@ -24,11 +25,32 @@ def mydatetime(value):
     datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
     return value
 
+class Argument(reqparse.Argument):
+    def handle_validation_error(self, error, bundle_errors):
+        """Called when an error is raised while parsing. Aborts the request
+        with a 400 status and an error message
+        :param error: the error that was raised
+        :param bundle_errors: do not abort when first error occurs, return a
+            dict with the name of the argument and the error message to be
+            bundled
+        """
+        #error_str = six.text_type(error)
+        #error_msg = self.help.format(error_msg=error_str) if self.help else error_str
+        #msg = {self.name: error_msg}
+        msg={}
+        if current_app.config.get("BUNDLE_ERRORS", False) or bundle_errors:
+            return error, msg
+        try:
+            abort(400)
+        except HTTPException as e:
+            e.data={}
+            raise
+
 class Users(Resource):
     def __init__(self):
         self.reqparser = reqparse.RequestParser()
-        self.reqparser.add_argument('username', type = str, required = True)
-        self.reqparser.add_argument('password', type = sha1, required = True)
+        self.reqparser.add_argument(Argument('username', type = str, required = True))
+        self.reqparser.add_argument(Argument('password', type = sha1, required = True))
         super(Users, self).__init__()
 
     def put(self):
@@ -75,10 +97,10 @@ class User(Resource):
 class Rides(Resource):
     def __init__(self):
         self.reqparser = reqparse.RequestParser()
-        self.reqparser.add_argument('created_by', type = str, required = True)
-        self.reqparser.add_argument('timestamp', type = mydatetime, required = True)
-        self.reqparser.add_argument('source', type = int, required = True)
-        self.reqparser.add_argument('destination', type = int, required = True)
+        self.reqparser.add_argument(Argument('created_by', type = str, required = True))
+        self.reqparser.add_argument(Argument('timestamp', type = mydatetime, required = True))
+        self.reqparser.add_argument(Argument('source', type = int, required = True))
+        self.reqparser.add_argument(Argument('destination', type = int, required = True))
         super(Rides, self).__init__()
 
     def post(self):
@@ -155,7 +177,7 @@ class RideID(Resource):
 
     def post(self, id):
         reqparser = reqparse.RequestParser()
-        reqparser.add_argument('username', type = str, required = True)
+        reqparser.add_argument(Argument('username', type = str, required = True))
         args = reqparser.parse_args(strict = True) #400 if any extra or less fields
         username = args['username']
         req = {
@@ -205,10 +227,10 @@ class RideID(Resource):
 class DBWrite(Resource):
     def __init__(self):
         self.reqparser = reqparse.RequestParser()
-        self.reqparser.add_argument('query', type = str, required = True)
-        self.reqparser.add_argument('table', type = str, required = True)
-        self.reqparser.add_argument('values', type = dict)
-        self.reqparser.add_argument('condition', type = dict)
+        self.reqparser.add_argument(Argument('query', type = str, required = True))
+        self.reqparser.add_argument(Argument('table', type = str, required = True))
+        self.reqparser.add_argument(Argument('values', type = dict))
+        self.reqparser.add_argument(Argument('condition', type = dict))
         super(DBWrite, self).__init__()
 
     def post(self):
@@ -239,9 +261,9 @@ class DBWrite(Resource):
 class DBRead(Resource):
     def __init__(self):
         self.reqparser = reqparse.RequestParser()
-        self.reqparser.add_argument('table', type = str, required = True)
-        self.reqparser.add_argument('columns', type = list)
-        self.reqparser.add_argument('condition', type = dict)
+        self.reqparser.add_argument(Argument('table', type = str, required = True))
+        self.reqparser.add_argument(Argument('columns', type = list))
+        self.reqparser.add_argument(Argument('condition', type = dict))
         super(DBRead, self).__init__()
 
     def post(self):
@@ -271,5 +293,4 @@ api.add_resource(DBRead, '/api/v1/db/read')
 
 
 if __name__ == '__main__':
-	app.run(port = port, debug=True)
-
+	app.run(port = port)
