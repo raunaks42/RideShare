@@ -47,7 +47,8 @@ class Argument(reqparse.Argument):
         except HTTPException as e:
             e.data={}
             raise
-        
+
+
 class RequestParser(reqparse.RequestParser):
     def parse_args(self, req=None, strict=False, http_error_code=400):
         """Parse all arguments from the provided request and return the results
@@ -85,6 +86,7 @@ class RequestParser(reqparse.RequestParser):
                 raise
 
         return namespace
+
 
 class Users(Resource):
     def __init__(self):
@@ -135,10 +137,6 @@ class User(Resource):
 
 
 class Rides(Resource):
-    def __init__(self):
-        
-        super(Rides, self).__init__()
-
     def post(self):
         reqparser = RequestParser()
         reqparser.add_argument(Argument('created_by', type = str, required = True))
@@ -185,7 +183,6 @@ class Rides(Resource):
                     'destination': destination
                 }
             }
-            print(req)
             res=post(URL+"/api/v1/db/read", json = req)
             res_json=[ride for ride in res.json() if datetime.strptime(ride['timestamp'], '%d-%m-%Y:%S-%M-%H') > datetime.now()]
             for ride in res_json:
@@ -270,6 +267,7 @@ class Ride(Resource):
             return {}, 405 #if ride not found
         return {}, 400 #if request json not empty
 
+
 class DBWrite(Resource):
     def __init__(self):
         self.reqparser = RequestParser()
@@ -303,6 +301,7 @@ class DBWrite(Resource):
                 execute(delete_query)
                 return {}, 200
             return {}, 400
+
 
 class DBRead(Resource):
     def post(self):
