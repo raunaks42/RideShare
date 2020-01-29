@@ -1,5 +1,13 @@
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, MetaData,
-                        String, Table, create_engine)
+from sqlalchemy import (Column, DateTime, ForeignKey, Integer, MetaData, String, Table, create_engine, event)
+from sqlalchemy.engine import Engine
+from sqlite3 import Connection as SQLite3Connection
+
+@event.listens_for(Engine, "connect")
+def _set_sqlite_pragma(dbapi_connection, connection_record):
+    if isinstance(dbapi_connection, SQLite3Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON;")
+        cursor.close()
 
 class DataBase:
 
@@ -16,7 +24,7 @@ class DataBase:
 
 		rides = Table('rides', metadata,
 			Column('rideId', Integer, autoincrement=True, primary_key=True),
-			Column('created_by', None, ForeignKey('users.username', ondelete='CASCADE')),
+			Column('created_by', None, ForeignKey('users.username', ondelete='CASCADE'), nullable=False),
 			Column('timestamp', String, nullable=False),
 			Column('source', Integer, nullable=False),
 			Column('destination', Integer, nullable=False)

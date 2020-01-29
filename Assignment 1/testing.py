@@ -36,7 +36,7 @@ def test_api_remove_user(payload, username,status,resp_body):
         assert response.json() == resp_body
 
 #Test API call 3 - Create a new ride
-param_string_api3 = "payload,username,timestamp,source,dest,status,resp_body"
+param_string_api3 = "payload,status,resp_body"
 #existing user 201
 a = ({"created_by":"testing","timestamp":"26-01-2020:00-53-09","source":22,"destination":23},201,{})
 #non existing user 405
@@ -55,14 +55,14 @@ g = ({},400,{})
 h = ({"created_by":"testing","source":22,"destination":23,"random_field":69},400,{})
 @pytest.mark.parametrize(param_string_api3,[a,b,c,d,e,f,g,h])
 def test_api_new_ride(payload,status,resp_body):
-        response = requests.post(API_ENDPOINT + "/api/v1/rides/",data=payload)
+        response = requests.post(API_ENDPOINT + "/api/v1/rides",data=payload)
         assert response.status_code == status
         assert response.json() == resp_body
         print(str(response.status_code) + " " +str(response.json()))
 
 
 #Test API call 4 - List upcoming rides for source and dest
-param_string_api4 = "payload,source,dest,resp_body"
+param_string_api4 = "payload,source,dest,status"
 #atleast one ride existing 200
 a = ({},22,23,200)
 #no ride exists 204
@@ -91,7 +91,7 @@ b = ({},1000,204,{})
 #non empty body 400
 c = ({"random":"hi"},1,400,{})
 @pytest.mark.parametrize(param_string_api5,[a,b,c])
-def test_api_get_rides(payload,rideid,status,resp_body):
+def test_api_get_rides1(payload,rideid,status,resp_body):
         response = requests.get(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
         assert response.status_code == status
         print(str(response.status_code) + " " +str(response.json()))
@@ -103,17 +103,17 @@ param_string_api6 = "payload,rideid,status,resp_body"
 #existing user existent ride id
 a = ({"username":"testing"},1,200,{})
 #existing user non existent ride id 204
-b = ({"username":"testing"},1,204,{})
+b = ({"username":"testing"},5,204,{})
 #non existing user and existing ride id 405
 c = ({"username":"blehblehbleh"},1,405,{})
 #non existing user and non existing ride id 405
-d = ({"username":"blehblehbleh"},1,204,{})
+d = ({"username":"blehblehbleh"},5,204,{})
 #empty requestbody 400
 e = ({},1,400,{})
 #user already in ride 405
 f = ({"username":"testing"},1,405,{})
 @pytest.mark.parametrize(param_string_api6,[a,b,c,d,e,f])
-def test_api_new_ride(payload,rideid,status,resp_body):
+def test_api_new_ride1(payload,rideid,status,resp_body):
         response = requests.post(API_ENDPOINT + "/api/v1/rides/"+str(rideid),data=payload)
         assert response.status_code == status
         print(str(response.status_code) + " " +str(response.json()))
@@ -129,7 +129,7 @@ b = ({},1254,405,{})
 #request json is not empty 400
 c = ({"random":"hi"},1,400,{})
 @pytest.mark.parametrize(param_string_api7,[a,b,c])
-def test_api_remove_user(payload,rideid,status,resp_body):
+def test_api_remove_user1(payload,rideid,status,resp_body):
         response = requests.delete(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
         assert response.status_code == status
         assert response.json() == resp_body

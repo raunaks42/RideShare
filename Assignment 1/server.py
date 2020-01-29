@@ -111,7 +111,7 @@ class Users(Resource):
 
 class User(Resource):
     def delete(self, username):
-        if not request.json:
+        if not request.get_json():
             req = {
                 'table': 'users',
                 'columns': ['username'],
@@ -136,15 +136,16 @@ class User(Resource):
 
 class Rides(Resource):
     def __init__(self):
-        self.reqparser = RequestParser()
-        self.reqparser.add_argument(Argument('created_by', type = str, required = True))
-        self.reqparser.add_argument(Argument('timestamp', type = mydatetime, required = True))
-        self.reqparser.add_argument(Argument('source', type = int, required = True))
-        self.reqparser.add_argument(Argument('destination', type = int, required = True))
+        
         super(Rides, self).__init__()
 
     def post(self):
-        args = self.reqparser.parse_args(strict = True) #400 if incorrect timestamp format, any extra/less fields
+        reqparser = RequestParser()
+        reqparser.add_argument(Argument('created_by', type = str, required = True))
+        reqparser.add_argument(Argument('timestamp', type = mydatetime, required = True))
+        reqparser.add_argument(Argument('source', type = int, required = True))
+        reqparser.add_argument(Argument('destination', type = int, required = True))
+        args = reqparser.parse_args(strict = True) #400 if incorrect timestamp format, any extra/less fields
         created_by = args['created_by']
         timestamp = args['timestamp']
         source = args['source']
@@ -166,31 +167,36 @@ class Rides(Resource):
             return {}, (201 if res1.status_code==200 else 405) #405 if given username doesnt exist
         return {}, 405 #if source/destination same or incorrect
 
+    def get(self):
+        reqparser = RequestParser()
+        reqparser.add_argument(Argument('source', location='args', type = int, required = True))
+        reqparser.add_argument(Argument('destination', location='args',type = int, required = True))
+        args = reqparser.parse_args(strict = True)
+        source = args['source']
+        destination = args['destination']
 
-class RideSD(Resource):
-    def get(self, source, destination):
-        if not request.json:
-            enum = pd.read_csv('AreaNameEnum.csv')
-            if source in enum['Area No'] and destination in enum['Area No'] and source!=destination:
-                req = {
-                    'table': 'rides',
-                    'columns': ['rideId', 'created_by', 'timestamp'],
-                    'condition': {
-                        'source': source,
-                        'destination': destination
-                    }
+        enum = pd.read_csv('AreaNameEnum.csv')
+        if source in enum['Area No'] and destination in enum['Area No'] and source!=destination:
+            req = {
+                'table': 'rides',
+                'columns': ['rideId', 'created_by', 'timestamp'],
+                'condition': {
+                    'source': source,
+                    'destination': destination
                 }
-                res=post(URL+"/api/v1/db/read", json = req)
-                res_json=[ride for ride in res.json() if datetime.strptime(ride['timestamp'], '%d-%m-%Y:%S-%M-%H') > datetime.now()]
-                for ride in res_json:
-                    ride['username']=ride.pop('created_by')
-                return (res_json, 200) if res_json else ({}, 204) #204 if no rides
-            return {}, 405 #if source/destination same or incorrect
-        return {}, 400 #if non empty request body
+            }
+            print(req)
+            res=post(URL+"/api/v1/db/read", json = req)
+            res_json=[ride for ride in res.json() if datetime.strptime(ride['timestamp'], '%d-%m-%Y:%S-%M-%H') > datetime.now()]
+            for ride in res_json:
+                ride['username']=ride.pop('created_by')
+            return (res_json, 200) if res_json else ({}, 204) #204 if no rides
+        return {}, 405 #if source/destination same or incorrect
 
-class RideID(Resource):
+
+class Ride(Resource):
     def get(self, id):
-        if not request.json:
+        if not request.get_json():
             req = {
                 'table': 'rides',
                 'columns': ['rideId', 'created_by', 'timestamp', 'source', 'destination'],
@@ -209,7 +215,7 @@ class RideID(Resource):
                     }
                 }
                 resr = post(URL+"/api/v1/db/read", json = req)
-                res_json['users']=[i['user'] for i in resr]
+                res_json['users']=[i['user'] for i in resr.json()]
                 return res_json, 200
             return {}, 204 #if no rides found
         return {}, 400 #if request json is not empty
@@ -242,7 +248,7 @@ class RideID(Resource):
         return {}, 204 #ride not found
 
     def delete(self, id):
-        if not request.json:
+        if not request.get_json():
             req = {
                 'table': 'rides',
                 'columns': ['rideId'],
@@ -299,15 +305,8 @@ class DBWrite(Resource):
             return {}, 400
 
 class DBRead(Resource):
-    def __init__(self):
-        self.reqparser = RequestParser()
-        self.reqparser.add_argument(Argument('table', type = str, required = True))
-        self.reqparser.add_argument(Argument('columns', type = list))
-        self.reqparser.add_argument(Argument('condition', type = dict))
-        super(DBRead, self).__init__()
-
     def post(self):
-        args = self.reqparser.parse_args()
+        args = request.get_json()
         table = args['table']
         if 'columns' in args:
             columns = args['columns']
@@ -317,8 +316,9 @@ class DBRead(Resource):
                 ''' + ('WHERE ' + ' AND '.join(map(lambda x, y: x+'='+repr(y), args['condition'].keys(), args['condition'].values())) if 'condition' in args else '')
             rows = fetchall(select_query)
             res = []
-            for row in rows:
-                res.append({columns[i]: row[i] for i in range(len(columns))})
+            if rows:
+                for row in rows:
+                    res.append({columns[i]: row[i] for i in range(len(columns))})
             return res, 200
         return {}, 400
 
@@ -326,11 +326,9 @@ class DBRead(Resource):
 api.add_resource(Users, '/api/v1/users')
 api.add_resource(User, '/api/v1/users/<string:username>')
 api.add_resource(Rides, '/api/v1/rides')
-api.add_resource(RideSD, '/api/v1/rides?source=<int:source>&destination=<int:destination>')
-api.add_resource(RideID, '/api/v1/rides/<int:id>')
+api.add_resource(Ride, '/api/v1/rides/<int:id>')
 api.add_resource(DBWrite, '/api/v1/db/write')
 api.add_resource(DBRead, '/api/v1/db/read')
-
 
 if __name__ == '__main__':
 	app.run(port = port)
