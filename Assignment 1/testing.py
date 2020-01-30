@@ -15,7 +15,7 @@ c = ({"username":"testing","password":"2b76bc65a367ae587b4d60d0c8278403f4f61efa"
 d = ({"username":"vishwas","password":"hello"},400,{})
 @pytest.mark.parametrize(param_string_api1,[a,b,c,d])
 def test_api_add_user_unique(payload,status,resp_body):
-        response = requests.put(API_ENDPOINT + "/api/v1/users",data=payload)
+        response = requests.put(API_ENDPOINT + "/api/v1/users",json=payload)
         assert response.status_code == status
         print(str(response.status_code) + " " +str(response.json()))
         assert response.json() == resp_body
@@ -30,7 +30,7 @@ b = ({},"thanos",405,{})
 c = ({"hello":1},"thanos",400,{})
 @pytest.mark.parametrize(param_string_api2,[a,b,c])
 def test_api_remove_user(payload, username,status,resp_body):
-        response = requests.delete(API_ENDPOINT + "/api/v1/users/"+username,data=payload)
+        response = requests.delete(API_ENDPOINT + "/api/v1/users/"+username,json=payload)
         assert response.status_code == status
         print(str(response.status_code) + " " +str(response.json()))
         assert response.json() == resp_body
@@ -38,15 +38,15 @@ def test_api_remove_user(payload, username,status,resp_body):
 #Test API call 3 - Create a new ride
 param_string_api3 = "payload,status,resp_body"
 #existing user 201
-a = ({"created_by":"testing","timestamp":"26-01-2020:00-53-09","source":22,"destination":23},201,{})
+a = ({"created_by":"testing","timestamp":"31-01-2020:00-53-09","source":22,"destination":23},201,{})
 #non existing user 405
-b = ({"created_by":"nobody","timestamp":"26-01-2020:00-53-09","source":22,"destination":23},405,{})
+b = ({"created_by":"nobody","timestamp":"31-01-2020:00-53-09","source":22,"destination":23},405,{})
 #incorrect date format
 c = ({"created_by":"nobody","timestamp":"2020-01-26:00-53-09","source":22,"destination":23},400,{})
 #out of range src dst
-d = ({"created_by":"testing","timestamp":"26-01-2020:00-53-09","source":890,"destination":7836},405,{})
+d = ({"created_by":"testing","timestamp":"31-01-2020:00-53-09","source":890,"destination":7836},405,{})
 #same src dst
-e = ({"created_by":"testing","timestamp":"26-01-2020:00-53-09","source":22,"destination":22},405,{})
+e = ({"created_by":"testing","timestamp":"31-01-2020:00-53-09","source":22,"destination":22},405,{})
 #missing fields
 f = ({"created_by":"testing","source":22,"destination":23},400,{})
 #empty body
@@ -55,7 +55,7 @@ g = ({},400,{})
 h = ({"created_by":"testing","source":22,"destination":23,"random_field":69},400,{})
 @pytest.mark.parametrize(param_string_api3,[a,b,c,d,e,f,g,h])
 def test_api_new_ride(payload,status,resp_body):
-        response = requests.post(API_ENDPOINT + "/api/v1/rides",data=payload)
+        response = requests.post(API_ENDPOINT + "/api/v1/rides",json=payload)
         assert response.status_code == status
         assert response.json() == resp_body
         print(str(response.status_code) + " " +str(response.json()))
@@ -74,10 +74,10 @@ d = ({},1000,22,405)
 #no source and no dest 405
 e = ({},10000,1000,405)
 #non empty request body ##invalid..get request
-#f = ({"hi":"hello"},10000,1000,400)
-@pytest.mark.parametrize(param_string_api4,[a,b,c,d,e])
+f = ({"hi":"hello"},10000,1000,400)
+@pytest.mark.parametrize(param_string_api4,[a,b,c,d,e,f])
 def test_api_get_upcoming_rides(payload,source,dest,status):
-        response = requests.get(API_ENDPOINT + "/api/v1/rides?source="+str(source)+"&destination="+str(dest))
+        response = requests.get(API_ENDPOINT + "/api/v1/rides?source="+str(source)+"&destination="+str(dest),json=payload)
         assert response.status_code == status
         print(str(response.status_code))
         
@@ -89,10 +89,10 @@ a = ({},1,200,{})
 #rideid doesn't exist 204
 b = ({},1000,204,{})
 #non empty body 400 invalid case get request
-#c = ({"random":"hi"},1,400,{})
-@pytest.mark.parametrize(param_string_api5,[a,b])
+c = ({"random":"hi"},1,400,{})
+@pytest.mark.parametrize(param_string_api5,[a,b,c])
 def test_api_get_ride_details(payload,rideid,status,resp_body):
-        response = requests.get(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
+        response = requests.get(API_ENDPOINT + "/api/v1/rides/"+str(rideid),json=payload)
         assert response.status_code == status
         print(str(response.status_code))
         
@@ -113,11 +113,10 @@ e = ({},1,400,{})
 #user already in ride 405
 f = ({"username":"testing"},1,405,{})
 @pytest.mark.parametrize(param_string_api6,[a,b,c,d,e,f])
-def test_api_new_ride1(payload,rideid,status,resp_body):
-        response = requests.post(API_ENDPOINT + "/api/v1/rides/"+str(rideid),data=payload)
+def test_api_join_ride(payload,rideid,status,resp_body):
+        response = requests.post(API_ENDPOINT + "/api/v1/rides/"+str(rideid),json=payload)
         assert response.status_code == status
-        print(str(response.status_code) + " " +str(response.json()))
-        assert response.json() == resp_body
+        print(str(response.status_code))
 
 
 #Test API call 7 - Delete ride
@@ -129,8 +128,8 @@ b = ({},1254,405,{})
 #request json is not empty 400
 c = ({"random":"hi"},1,400,{})
 @pytest.mark.parametrize(param_string_api7,[a,b,c])
-def test_api_remove_user1(payload,rideid,status,resp_body):
-        response = requests.delete(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
+def test_api_delete_ride(payload,rideid,status,resp_body):
+        response = requests.delete(API_ENDPOINT + "/api/v1/rides/"+str(rideid),json=payload)
         assert response.status_code == status
         assert response.json() == resp_body
         print(str(response.status_code) + " " +str(response.json()))
