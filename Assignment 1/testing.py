@@ -76,11 +76,11 @@ e = ({},10000,1000,405)
 #non empty request body
 f = ({"hi":"hello"},10000,1000,400)
 @pytest.mark.parametrize(param_string_api4,[a,b,c,d,e,f])
-def test_api_get_upcoming_rides(payload,source,dest,status):
+def test_api_get_rides(payload,source,dest,status):
         response = requests.get(API_ENDPOINT + "/api/v1/rides?source="+str(source)+"&destination="+str(dest))
         assert response.status_code == status
-        print(str(response.status_code))
-        print(response.json())
+        print(str(response.status_code) + " " +str(response.json()))
+
 
 #Test API call 5 - get ride details
 param_string_api5 = "payload,rideid,status,resp_body"
@@ -91,11 +91,11 @@ b = ({},1000,204,{})
 #non empty body 400
 c = ({"random":"hi"},1,400,{})
 @pytest.mark.parametrize(param_string_api5,[a,b,c])
-def test_api_get_ride_details(payload,rideid,status,resp_body):
+def test_api_get_rides1(payload,rideid,status,resp_body):
         response = requests.get(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
         assert response.status_code == status
         print(str(response.status_code) + " " +str(response.json()))
-        
+        assert response.json() == resp_body
 
 
 #Test API call 6 - join a ride
@@ -113,7 +113,7 @@ e = ({},1,400,{})
 #user already in ride 405
 f = ({"username":"testing"},1,405,{})
 @pytest.mark.parametrize(param_string_api6,[a,b,c,d,e,f])
-def test_api_join_ride(payload,rideid,status,resp_body):
+def test_api_new_ride1(payload,rideid,status,resp_body):
         response = requests.post(API_ENDPOINT + "/api/v1/rides/"+str(rideid),data=payload)
         assert response.status_code == status
         print(str(response.status_code) + " " +str(response.json()))
@@ -129,7 +129,7 @@ b = ({},1254,405,{})
 #request json is not empty 400
 c = ({"random":"hi"},1,400,{})
 @pytest.mark.parametrize(param_string_api7,[a,b,c])
-def test_api_delete_ride(payload,rideid,status,resp_body):
+def test_api_remove_user1(payload,rideid,status,resp_body):
         response = requests.delete(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
         assert response.status_code == status
         assert response.json() == resp_body

@@ -26,6 +26,7 @@ def mydatetime(value):
     datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
     return value
 
+
 class Argument(reqparse.Argument):
     def handle_validation_error(self, error, bundle_errors):
         """Called when an error is raised while parsing. Aborts the request
@@ -47,7 +48,7 @@ class Argument(reqparse.Argument):
         except HTTPException as e:
             e.data={}
             raise
-
+        
 
 class RequestParser(reqparse.RequestParser):
     def parse_args(self, req=None, strict=False, http_error_code=400):
@@ -187,7 +188,7 @@ class Rides(Resource):
             res_json=[ride for ride in res.json() if datetime.strptime(ride['timestamp'], '%d-%m-%Y:%S-%M-%H') > datetime.now()]
             for ride in res_json:
                 ride['username']=ride.pop('created_by')
-            return (res_json, 200) if res_json else ({}, 204) #204 if no rides
+            return res_json, (200 if res_json else 204) #204 if no rides
         return {}, 405 #if source/destination same or incorrect
 
 
