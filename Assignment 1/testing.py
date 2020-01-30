@@ -113,7 +113,7 @@ e = ({},1,400,{})
 #user already in ride 405
 f = ({"username":"testing"},1,405,{})
 @pytest.mark.parametrize(param_string_api6,[a,b,c,d,e,f])
-def test_api_join_ride(payload,rideid,status,resp_body):
+def test_api_new_ride1(payload,rideid,status,resp_body):
         response = requests.post(API_ENDPOINT + "/api/v1/rides/"+str(rideid),data=payload)
         assert response.status_code == status
         print(str(response.status_code) + " " +str(response.json()))
@@ -129,7 +129,7 @@ b = ({},1254,405,{})
 #request json is not empty 400
 c = ({"random":"hi"},1,400,{})
 @pytest.mark.parametrize(param_string_api7,[a,b,c])
-def test_api_delete_ride(payload,rideid,status,resp_body):
+def test_api_remove_user1(payload,rideid,status,resp_body):
         response = requests.delete(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
         assert response.status_code == status
         assert response.json() == resp_body
