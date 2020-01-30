@@ -1,2 +1,4 @@
 *.db
-__pycache/*/*
+__pycache__/
+.~lock.AreaNameEnum.csv#
+out

@@ -73,14 +73,14 @@ c = ({},22,1000,405)
 d = ({},1000,22,405)
 #no source and no dest 405
 e = ({},10000,1000,405)
-#non empty request body
-f = ({"hi":"hello"},10000,1000,400)
-@pytest.mark.parametrize(param_string_api4,[a,b,c,d,e,f])
+#non empty request body ##invalid..get request
+#f = ({"hi":"hello"},10000,1000,400)
+@pytest.mark.parametrize(param_string_api4,[a,b,c,d,e])
 def test_api_get_upcoming_rides(payload,source,dest,status):
         response = requests.get(API_ENDPOINT + "/api/v1/rides?source="+str(source)+"&destination="+str(dest))
         assert response.status_code == status
         print(str(response.status_code))
-        print(response.json())
+        
 
 #Test API call 5 - get ride details
 param_string_api5 = "payload,rideid,status,resp_body"
@@ -88,13 +88,13 @@ param_string_api5 = "payload,rideid,status,resp_body"
 a = ({},1,200,{})
 #rideid doesn't exist 204
 b = ({},1000,204,{})
-#non empty body 400
-c = ({"random":"hi"},1,400,{})
-@pytest.mark.parametrize(param_string_api5,[a,b,c])
+#non empty body 400 invalid case get request
+#c = ({"random":"hi"},1,400,{})
+@pytest.mark.parametrize(param_string_api5,[a,b])
 def test_api_get_ride_details(payload,rideid,status,resp_body):
         response = requests.get(API_ENDPOINT + "/api/v1/rides/"+str(rideid))
         assert response.status_code == status
-        print(str(response.status_code) + " " +str(response.json()))
+        print(str(response.status_code))
         
 
 
