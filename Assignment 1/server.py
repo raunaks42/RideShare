@@ -109,7 +109,7 @@ class Users(Resource):
             }
         }
         res = post(URL+"/api/v1/db/write", json = req)
-        return {}, (201 if res.status_code==200 else 405) #405 if insert fail
+        return {}, (201 if res.status_code==200 else 400) #400 if insert fail
 
 
 class User(Resource):
@@ -132,9 +132,8 @@ class User(Resource):
                     }
                 }
                 post(URL+"/api/v1/db/write", json = req)
-                return {}, 200 
-            return {}, 405 #username doesnt exist
-        return {}, 400 #non empty request json
+                return {}, 200
+        return {}, 400 #non empty request json or username doesnt exist
 
 
 class Rides(Resource):
@@ -163,8 +162,9 @@ class Rides(Resource):
                 }
             }
             res1 = post(URL+"/api/v1/db/write", json = req)
-            return {}, (201 if res1.status_code==200 else 405) #405 if given username doesnt exist
-        return {}, 405 #if source/destination same or incorrect
+            if res1.status_code==200:
+                return {}, 201
+        return {}, 400 #if source/destination same or incorrect or username doesnt exist
 
     def get(self):
         reqparser = RequestParser()
@@ -189,7 +189,7 @@ class Rides(Resource):
             for ride in res_json:
                 ride['username']=ride.pop('created_by')
             return res_json, (200 if res_json else 204) #204 if no rides
-        return {}, 405 #if source/destination same or incorrect
+        return {}, 400 #if source/destination same or incorrect
 
 
 class Ride(Resource):
@@ -234,6 +234,14 @@ class Ride(Resource):
         res = post(URL+"/api/v1/db/read", json = req)
         if res.json():
             req = {
+                'table': 'rides',
+                'columns': ['created_by'],
+                'condition': {
+                    'created_by': username
+                }
+            }
+            resr = post(URL+"/api/v1/db/read", json = req)
+            req = {
                 'query': 'insert',
                 'table': 'riders',
                 'values': {
@@ -242,7 +250,7 @@ class Ride(Resource):
                 }
             }
             resw = post(URL+"/api/v1/db/write", json = req)
-            return {}, (200 if resw.status_code==200 else 405) #405 if user not found or user already joined ride
+            return {}, (200 if (resw.status_code==200 and not resr.json()) else 400) #400 if user not found or user already joined ride or user is creator
         return {}, 204 #ride not found
 
     def delete(self, id):
@@ -265,8 +273,7 @@ class Ride(Resource):
                 }
                 post(URL+"/api/v1/db/write", json = req)
                 return {}, 200
-            return {}, 405 #if ride not found
-        return {}, 400 #if request json not empty
+        return {}, 400 #if request json not empty or ride not found
 
 
 class DBWrite(Resource):
