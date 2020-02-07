@@ -16,6 +16,12 @@ api = Api(app)
 port = 4000
 URL = "http://localhost:"+str(port)
 
+@app.before_request
+def log_request_info():
+    with open("request_log",'a') as log:
+        print(request.headers,request.get_data(),file=log)
+
+
 def sha1(value):
     if len(value)==40:
         int(value,16)
@@ -336,6 +342,12 @@ api.add_resource(Rides, '/api/v1/rides')
 api.add_resource(Ride, '/api/v1/rides/<int:id>')
 api.add_resource(DBWrite, '/api/v1/db/write')
 api.add_resource(DBRead, '/api/v1/db/read')
+
+@app.after_request
+def after(response):
+    with open("response_log",'a') as log:
+        print(response.status,response.headers,response.get_data(),file=log)
+    return response
 
 if __name__ == '__main__':
 	app.run(port = port)
