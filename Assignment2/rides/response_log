@@ -1,0 +1,472 @@
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 162
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "prakash",\n        "timestamp": "26-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 113
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "prakash",\n        "timestamp": "26-02-2020:00-53-09"\n    }\n]\n'
+204 NO CONTENT Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 223
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "prakash",\n        "timestamp": "26-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 111
+
+ b'[\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 2\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 60
+
+ b'[\n    {\n        "rideId": 2,\n        "user": "siva"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 321
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "prakash",\n        "timestamp": "26-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    },\n    {\n        "rideId": 2,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 110
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 108
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    }\n]\n'
+400 BAD REQUEST Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 217
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 213
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 327
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 321
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 327
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 321
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 2\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 48
+
+ b'[\n    {\n        "created_by": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+400 BAD REQUEST Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 327
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 321
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 2\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 48
+
+ b'[\n    {\n        "created_by": "prakash"\n    }\n]\n'
+400 BAD REQUEST Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+400 BAD REQUEST Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 63
+
+ b'[\n    {\n        "rideId": 2,\n        "user": "prakash"\n    }\n]\n'
+400 BAD REQUEST Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 2\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 120
+
+ b'[\n    {\n        "rideId": 2,\n        "user": "prakash"\n    },\n    {\n        "rideId": 2,\n        "user": "siva"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 120
+
+ b'[\n    {\n        "rideId": 2,\n        "user": "prakash"\n    },\n    {\n        "rideId": 2,\n        "user": "siva"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 159
+
+ b'[\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 78
+
+ b'[\n    {\n        "user": "prakash"\n    },\n    {\n        "user": "siva"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 183
+
+ b'{\n    "rideId": 2,\n    "created_by": "yash",\n    "timestamp": "28-02-2020:00-53-09",\n    "source": 22,\n    "destination": 23,\n    "users": [\n        "prakash",\n        "siva"\n    ]\n}\n'
+200 OK Content-Type: application/json
+Content-Length: 327
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 321
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 2\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 327
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 321
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 327
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 2,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 321
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 2,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 2\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 220
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 216
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 220
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09"\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 216
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "yash"\n    },\n    {\n        "rideId": 3,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "prakash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 318
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "yash",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    },\n    {\n        "rideId": 3,\n        "created_by": "prakash",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+400 BAD REQUEST Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 110
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "siva",\n        "timestamp": "28-02-2020:00-53-09"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 108
+
+ b'[\n    {\n        "rideId": 1,\n        "timestamp": "28-02-2020:00-53-09",\n        "username": "siva"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 159
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "siva",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 1\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 159
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "siva",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 39
+
+ b'[\n    {\n        "user": "yash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 164
+
+ b'{\n    "rideId": 1,\n    "created_by": "siva",\n    "timestamp": "28-02-2020:00-53-09",\n    "source": 22,\n    "destination": 23,\n    "users": [\n        "yash"\n    ]\n}\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 1\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+204 NO CONTENT Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+204 NO CONTENT Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 159
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "siva",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 1\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 60
+
+ b'[\n    {\n        "rideId": 1,\n        "user": "yash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 60
+
+ b'[\n    {\n        "rideId": 1,\n        "user": "yash"\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 159
+
+ b'[\n    {\n        "rideId": 1,\n        "created_by": "siva",\n        "timestamp": "28-02-2020:00-53-09",\n        "source": 22,\n        "destination": 23\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 36
+
+ b'[\n    {\n        "rideId": 1\n    }\n]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'

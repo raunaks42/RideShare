@@ -1,0 +1,60 @@
+404 NOT FOUND Content-Type: text/html; charset=utf-8
+Content-Length: 232
+
+ b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n<title>404 Not Found</title>\n<h1>Not Found</h1>\n<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>\n'
+404 NOT FOUND Content-Type: text/html; charset=utf-8
+Content-Length: 232
+
+ b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n<title>404 Not Found</title>\n<h1>Not Found</h1>\n<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+201 CREATED Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 79
+
+ b'[{"username": "yash", "password": "3d725109c7e7c0bfb9d709836735b56d943d263f"}]\n'
+404 NOT FOUND Content-Type: text/html; charset=utf-8
+Content-Length: 232
+
+ b'<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">\n<title>404 Not Found</title>\n<h1>Not Found</h1>\n<p>The requested URL was not found on the server. If you entered the URL manually please check your spelling and try again.</p>\n'
+200 OK Content-Type: application/json
+Content-Length: 79
+
+ b'[{"username": "yash", "password": "3d725109c7e7c0bfb9d709836735b56d943d263f"}]\n'
+200 OK Content-Type: application/json
+Content-Length: 79
+
+ b'[{"username": "yash", "password": "3d725109c7e7c0bfb9d709836735b56d943d263f"}]\n'
+200 OK Content-Type: application/json
+Content-Length: 79
+
+ b'[{"username": "yash", "password": "3d725109c7e7c0bfb9d709836735b56d943d263f"}]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'
+400 BAD REQUEST Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 23
+
+ b'[{"username": "yash"}]\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'{}\n'
+200 OK Content-Type: application/json
+Content-Length: 3
+
+ b'[]\n'

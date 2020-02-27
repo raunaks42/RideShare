@@ -1,0 +1,141 @@
+Host: 127.0.0.1:4000
+Connection: keep-alive
+Upgrade-Insecure-Requests: 1
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36
+Sec-Fetch-User: ?1
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9
+Sec-Fetch-Site: none
+Sec-Fetch-Mode: navigate
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-IN,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,pt-BR;q=0.6,pt;q=0.5,en-US;q=0.4,hi-IN;q=0.3,hi;q=0.2,uk-UA;q=0.1,uk;q=0.1,he-IL;q=0.1,he;q=0.1,pt-PT;q=0.1,el-GR;q=0.1,el;q=0.1,en-GB;q=0.1
+
+ b''
+Host: 127.0.0.1:4000
+Connection: keep-alive
+User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.130 Safari/537.36
+Accept: image/webp,image/apng,image/*,*/*;q=0.8
+Sec-Fetch-Site: same-origin
+Sec-Fetch-Mode: no-cors
+Referer: http://127.0.0.1:4000/
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-IN,en;q=0.9,ru-RU;q=0.8,ru;q=0.7,pt-BR;q=0.6,pt;q=0.5,en-US;q=0.4,hi-IN;q=0.3,hi;q=0.2,uk-UA;q=0.1,uk;q=0.1,he-IL;q=0.1,he;q=0.1,pt-PT;q=0.1,el-GR;q=0.1,el;q=0.1,en-GB;q=0.1
+
+ b''
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Content-Length: 78
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Content-Type: application/json
+Postman-Token: 060920fd-d3fc-45d0-9945-e63cb3f23d24
+
+ b'{\n"username": "yash",\n"password": "3d725109c7e7c0bfb9d709836735b56d943d263f"\n}'
+Host: localhost:4000
+User-Agent: python-requests/2.23.0
+Content-Length: 125
+Accept: */*
+Accept-Encoding: gzip, deflate
+Content-Type: application/json
+
+ b'{"query": "insert", "table": "users", "values": {"username": "yash", "password": "3d725109c7e7c0bfb9d709836735b56d943d263f"}}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Content-Length: 58
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Content-Type: application/json
+Postman-Token: fcdd5a65-7b2e-42af-b7af-f6a3239ae2f4
+
+ b'{\n\t"table": "users",\n\t"columns": ["username","password"]\n}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Content-Length: 97
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Content-Type: application/json
+Postman-Token: 9709a24c-dcb4-477a-99db-a9319598b3fe
+
+ b'{\n\t"created_by": "prakash",\n\t"timestamp":"26-02-2020:00-53-09",\n\t"source":22,\n\t"destination":23\n}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Content-Length: 58
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Content-Type: application/json
+Postman-Token: 33a83c0e-c7a7-40f3-80df-a625b96faf65
+
+ b'{\n\t"table": "users",\n\t"columns": ["username","password"]\n}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Content-Length: 58
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Content-Type: application/json
+Postman-Token: efbc04f3-3011-45ad-b5fe-9277471bc927
+
+ b'{\n\t"table": "users",\n\t"columns": ["username","password"]\n}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Content-Length: 58
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Content-Type: application/json
+Postman-Token: 65e06f84-d3b4-484f-bb94-025ca205e3bc
+
+ b'{\n\t"table": "users",\n\t"columns": ["username","password"]\n}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Postman-Token: 84302b8a-4a6a-40d4-98f7-80801c556113
+
+ b''
+Host: localhost:4000
+User-Agent: python-requests/2.23.0
+Content-Length: 85
+Accept: */*
+Accept-Encoding: gzip, deflate
+Content-Type: application/json
+
+ b'{"table": "users", "columns": ["username"], "condition": {"username": "yashpradhan"}}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Postman-Token: 141e93b3-01de-444e-83a6-465631adcce0
+
+ b''
+Host: localhost:4000
+User-Agent: python-requests/2.23.0
+Content-Length: 78
+Accept: */*
+Accept-Encoding: gzip, deflate
+Content-Type: application/json
+
+ b'{"table": "users", "columns": ["username"], "condition": {"username": "yash"}}'
+Host: localhost:4000
+User-Agent: python-requests/2.23.0
+Content-Length: 72
+Accept: */*
+Accept-Encoding: gzip, deflate
+Content-Type: application/json
+
+ b'{"query": "delete", "table": "users", "condition": {"username": "yash"}}'
+Host: 127.0.0.1:4000
+User-Agent: PostmanRuntime/7.22.0
+Content-Length: 58
+Accept: */*
+Accept-Encoding: gzip, deflate, br
+Cache-Control: no-cache
+Content-Type: application/json
+Postman-Token: a81bf8ff-fab8-4109-b4f9-2238a2e4daf0
+
+ b'{\n\t"table": "users",\n\t"columns": ["username","password"]\n}'
