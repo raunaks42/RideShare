@@ -12,9 +12,8 @@ from database import execute, fetchone, fetchall
 app = Flask(__name__)
 api = Api(app)
 
-URL = "http://rides_service"
-URL_user = "http://users_service"
-
+port = 80
+URL = "http://localhost:"+str(port)
 
 
 @app.before_request
@@ -111,7 +110,7 @@ class Rides(Resource):
         destination = args['destination']
 
         #Check for username
-        res = get(URL_user + "/api/v1/users")
+        res = get("http://users" + "/api/v1/users")
         matched = False
         for user in res.json():
             if user == created_by:
@@ -199,7 +198,7 @@ class Ride(Resource):
         username = args['username']
 
         # Check for username
-        res = get(URL_user + "/api/v1/users")
+        res = get("http://users" + "/api/v1/users")
         matched = False
         for user in res.json():
             if user == username:
@@ -210,12 +209,19 @@ class Ride(Resource):
 
         req = {
             'table': 'rides',
-            'columns': ['rideId'],
+            'columns': ['rideId','created_by'],
             'condition': {
                 'rideId': id
             }
         }
+
         res = post(URL + "/api/v1/db/read", json=req)
+
+        #Checking if user trying to join is not same as one who created ride
+        for ride in res.json():
+             if(ride["created_by"]==username):
+                 return {},400
+
         if res.json():
             req = {
                 'table': 'rides',

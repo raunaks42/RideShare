@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  users_service:
+  users:
     image: users:latest
     build: ./users
     volumes:
@@ -13,7 +13,7 @@ services:
     container_name: users
     environment:
       - TEAM_NAME=CC_0072_0206_0262_0704
-  rides_service:
+  rides:
     image: rides:latest
     build: ./rides
     volumes:
