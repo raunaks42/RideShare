@@ -12,8 +12,9 @@ from database import execute, fetchone, fetchall
 app = Flask(__name__)
 api = Api(app)
 
-port = 80
-URL = "http://localhost:"+str(port)
+URL = "http://rides_service"
+URL_user = "http://users_service"
+
 
 
 @app.before_request
@@ -110,7 +111,7 @@ class Rides(Resource):
         destination = args['destination']
 
         #Check for username
-        res = get("http://52.73.112.73:8080" + "/api/v1/users")
+        res = get(URL_user + "/api/v1/users")
         matched = False
         for user in res.json():
             if user == created_by:
@@ -198,7 +199,7 @@ class Ride(Resource):
         username = args['username']
 
         # Check for username
-        res = get("http://52.73.112.73:8080" + "/api/v1/users")
+        res = get(URL_user + "/api/v1/users")
         matched = False
         for user in res.json():
             if user == username:

@@ -1,7 +1,8 @@
 version: '3'
 
 services:
-  users:
+  users_service:
+    image: users:latest
     build: ./users
     volumes:
       - ./users:/app
@@ -9,7 +10,11 @@ services:
       - 8080
     ports:
       - 8080:80
-  rides:
+    container_name: users
+    environment:
+      - TEAM_NAME=CC_0072_0206_0262_0704
+  rides_service:
+    image: rides:latest
     build: ./rides
     volumes:
       - ./rides:/app
@@ -17,3 +22,6 @@ services:
       - 8000
     ports:
       - 8000:80
+    container_name: rides
+    environment:
+      - TEAM_NAME=CC_0072_0206_0262_0704

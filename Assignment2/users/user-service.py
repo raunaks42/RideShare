@@ -11,9 +11,7 @@ from database import execute, fetchone, fetchall
 app = Flask(__name__)
 api = Api(app)
 
-port = 80
-URL = "http://localhost:"+str(port)
-
+URL = "http://users_service"
 
 @app.before_request
 def log_request_info():
@@ -121,6 +119,7 @@ class Users(Resource):
                 'columns': ['username']
             }
             res = post(URL + "/api/v1/db/read", json=req)
+            print(res)
             res_json = [user["username"] for user in res.json()]
             return res_json, (200 if res_json else 204)
         return {}, 400  # non empty request json or username doesnt exist
@@ -218,7 +217,6 @@ class DBClear(Resource):
 
 api.add_resource(Users, '/api/v1/users')
 api.add_resource(User, '/api/v1/users/<string:username>')
-# api.add_resource(User, '/api/v1/users')
 api.add_resource(DBWrite, '/api/v1/db/write')
 api.add_resource(DBRead, '/api/v1/db/read')
 api.add_resource(DBClear, '/api/v1/db/clear')
