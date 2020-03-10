@@ -8,7 +8,7 @@
 - Setup target groups and load balancer in AWS
 
 
-#### Testing: 
+#### Testing
 ### Public IPs & DNS
 ###### (When instances are active)
 - Users Instance : http://52.73.112.73
