@@ -1,4 +1,4 @@
-### Load Balancing for RideShare
+## Load Balancing for RideShare
 [Assignment Specifications](https://d1b10bmlvqabco.cloudfront.net/attach/k4vbpy4o35q1ci/jzb6kq5w25w4tm/k7evdrlwudxl/Assignment_3.pdf) 
 #### Instructions
 - Make Two Seperate AWS Instances
