@@ -32,6 +32,9 @@ class DataBase:
                        Column('user', String, primary_key=True)
                        )
 
+        apicount = Table('apicount', metadata,
+                         Column('count', Integer, primary_key=True, default=0))
+
         try:
             metadata.create_all(self.db_engine)
         except Exception as e:
@@ -73,4 +76,5 @@ fetchone = db.fetchone
 
 if __name__ == "__main__":
     db.create_db_tables()
+    execute('''INSERT INTO APICOUNT VALUES(0)''')
     pass

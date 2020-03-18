@@ -23,6 +23,8 @@ class DataBase:
                       Column('username', String, primary_key=True),
                       Column('password', String, nullable=False)
                       )
+        apicount = Table('apicount', metadata,
+                      Column('count', Integer, primary_key=True, default=0))
 
         try:
             metadata.create_all(self.db_engine)
@@ -57,12 +59,13 @@ class DataBase:
                 return False
         return list(res) if res else False
 
-
 db = DataBase('users.db')
 execute = db.execute
 fetchall = db.fetchall
 fetchone = db.fetchone
 
+
 if __name__ == "__main__":
     db.create_db_tables()
+    execute('''INSERT INTO APICOUNT VALUES(0)''')
     pass

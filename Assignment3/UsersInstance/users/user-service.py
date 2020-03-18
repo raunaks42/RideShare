@@ -5,7 +5,7 @@ from flask_restful import Api, Resource, reqparse
 import flask_restful
 from requests import post
 from werkzeug.exceptions import HTTPException
-
+import os
 from database import execute, fetchone, fetchall
 
 app = Flask(__name__)
@@ -14,12 +14,32 @@ api = Api(app)
 port = 80
 URL = "http://localhost:"+str(port)
 
-req_counter = 0
 
 @app.before_request
 def log_request_info():
-    with open("request_log", 'a') as log:
-        print(request.headers, request.get_data(), file=log)
+    if request.path == '/api/v1/users' or request.path.startswith('/api/v1/users/'):
+        incrementCount()
+
+@app.after_request
+def after(response):
+    with open("users_log.csv", 'a') as log:
+        if os.stat("users_log.csv").st_size == 0:
+            print('Type;Path;Request Body;Incremented API Count?;Response Code;Response Body',file=log)
+        if request.path == '/api/v1/db/write' or request.path == '/api/v1/db/read' or request.path=='/':
+            pass
+        else:
+            print(request.method, end=";", file=log)
+            print(request.path, end=";", file=log)
+            # print(str(request.headers).strip(), end=";",file=log)
+            print(request.json, end=";", file=log)
+            if request.path == '/api/v1/users' or request.path.startswith('/api/v1/users/'):
+                print("yes",end=";", file=log)
+            else:
+                print("no",end=";", file=log)
+            print(response.status, end=";", file=log)
+            # print(response.headers, end=";", file=log)
+            print(response.json, file=log)
+    return response
 
 
 def sha1(value):
@@ -33,6 +53,9 @@ def mydatetime(value):
     datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
     return value
 
+def incrementCount():
+    query = "UPDATE APICOUNT SET COUNT = COUNT + 1"
+    execute(query)
 
 class Argument(reqparse.Argument):
     def handle_validation_error(self, error, bundle_errors):
@@ -98,8 +121,6 @@ class RequestParser(reqparse.RequestParser):
 
 class Users(Resource):
     def put(self):
-        global req_counter
-        req_counter += 1
         reqparser = RequestParser()
         reqparser.add_argument(Argument('username', type=str, required=True))
         reqparser.add_argument(Argument('password', type=sha1, required=True))
@@ -118,8 +139,6 @@ class Users(Resource):
         return {}, (201 if res.status_code == 200 else 400)  # 400 if insert fail
 
     def get(self):
-        global req_counter
-        req_counter += 1
         if not request.get_json():
             req = {
                 'table': 'users',
@@ -134,8 +153,6 @@ class Users(Resource):
 
 class User(Resource):
     def delete(self, username):
-        global req_counter
-        req_counter += 1
         if not request.get_json():
             req = {
                 'table': 'users',
@@ -224,27 +241,26 @@ class DBClear(Resource):
 
 class ReqCount(Resource):
     def get(self):
-        return [req_counter], 200
+        query = '''SELECT * FROM APICOUNT'''
+        rows = fetchall(query)
+        if rows:
+            for row in rows:
+                return [row[0]], 200
+        else:
+            return [-100], 200 #Should never actually reach here. If it reaches here, database tables not set up properly.
     def delete(self):
-        global req_counter
-        req_counter = 0
-        return {},200
+        query = '''UPDATE APICOUNT SET COUNT=0'''
+        execute(query)
+        return {}, 200
 
 
 api.add_resource(Users, '/api/v1/users')
 api.add_resource(User, '/api/v1/users/<string:username>')
-# api.add_resource(User, '/api/v1/users')
 api.add_resource(DBWrite, '/api/v1/db/write')
 api.add_resource(DBRead, '/api/v1/db/read')
 api.add_resource(DBClear, '/api/v1/db/clear')
 api.add_resource(ReqCount, '/api/v1/_count')
 
-
-@app.after_request
-def after(response):
-    with open("response_log", 'a') as log:
-        print(response.status, response.headers, response.get_data(), file=log)
-    return response
 
 
 if __name__ == '__main__':
