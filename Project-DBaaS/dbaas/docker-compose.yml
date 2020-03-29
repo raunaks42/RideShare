@@ -1,0 +1,65 @@
+version: '3.4'
+services:
+  db-service:
+    image: persdb:latest
+    build: ./persdb
+    # volumes:
+    #   - ./persdb:/app
+    expose:
+      - 8500
+    ports:
+      - 8500:8500
+    container_name: persdb
+    environment:
+      - TEAM_NAME=CC_0072_0206_0262_0704
+   
+  orchestrator:
+    image: orchestrator:latest
+    build: ./orchestrator
+    depends_on:
+      - "db-service"
+      #- "bunny"
+    expose:
+      - 9500
+    ports:
+      - 9500:9500
+    container_name: orchestrator
+    environment:
+      - TEAM_NAME=CC_0072_0206_0262_0704
+
+  worker:
+    image: worker:latest
+    build: ./worker
+    depends_on:
+      - "db-service"
+      #- "bunny"
+    expose:
+      - 8100
+    ports:
+      - 8100:8100
+    container_name: worker
+    environment:
+      - TEAM_NAME=CC_0072_0206_0262_0704
+    
+  master:
+    image: worker:latest
+    build: ./worker
+    depends_on:
+      - "db-service"
+      #- "bunny"
+    expose:
+      - 8100
+    ports:
+      - 8101:8100
+    container_name: master
+    environment:
+      - TEAM_NAME=CC_0072_0206_0262_0704
+
+  # bunny:
+  #   image: rabbitmq:latest
+  #   expose:
+  #     - 5672
+  #   ports:
+  #     - 9000:5672
+  #   container_name: bunny
+    
