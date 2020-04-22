@@ -1,17 +1,22 @@
-from datetime import datetime
-from flask import Flask, jsonify, request, current_app, abort
-from flask_restful import Api, Resource, reqparse
-import pandas as pd
-import flask_restful
-from requests import post,get
-from werkzeug.exceptions import HTTPException
-import os
-import subprocess
-import pika
 import json
-import uuid
+import os
 import time
+import traceback
+import uuid
+from datetime import datetime
 from logging.config import dictConfig
+from multiprocessing import Value
+
+import atexit
+from apscheduler.schedulers.background import BackgroundScheduler
+
+import docker
+import pika
+from flask import Flask, request
+from flask_restful import Api, Resource
+from requests import get
+
+import enum
 
 dictConfig({
     'version': 1,
@@ -28,6 +33,7 @@ dictConfig({
         'handlers': ['wsgi']
     }
 })
+
 app = Flask(__name__)
 api = Api(app)
 
@@ -36,20 +42,96 @@ channel_r = connection.channel()
 channel_r.queue_declare("readQ")
 channel_w = connection.channel()
 channel_w.queue_declare("writeQ")
+
+counter = Value('i', 0)
+
+
+class JOB(enum.Enum):
+    NONE = 0
+    MASTER = 1
+    SLAVE = 2
+    SYNC = 3
+
+
+def spawn_container(job_id):
+    client = docker.from_env()
+    container = client.containers.run("worker", detach=True, network="dbaas-net")
+    time.sleep(5)  # Wait till container starts up
+
+    # Get container object with updated information post startup (e.g. container IP Address)
+    container = client.containers.get(container.id)
+
+    # Getting IP address of this new container.
+    ip_add = container.attrs['NetworkSettings']['Networks']['dbaas-net']['IPAddress']
+
+    # Why not use container name?
+    # For some reason does not work! Very weird behavior.
+    # What's weirder is that if we give a custom name to the container while creating it,
+    # then using container name here works?!
+
+    res = get("http://" + ip_add + "/control/v1/start/"+str(job_id.value))
+    if res.status_code != 200:
+        raise Exception("Setting container job did not succeed.")
+    app.logger.info("Spawned Container with Job %s (IP: %s)", job_id, ip_add)
+
+
+def scaling():
+    with counter.get_lock():
+        no_of_slaves = int((counter.value-1)/20)+1
+        app.logger.info("Required no. of slaves: %s", no_of_slaves)
+        client = docker.from_env()
+        cls = client.containers.list(filters={"ancestor": "worker"})
+        cur_count = 0
+        for cont in cls:
+            ip_add = cont.attrs['NetworkSettings']['Networks']['dbaas-net']['IPAddress']
+            res = get("http://" + ip_add + "/control/v1/getstatus")
+            if res.json()[0] == JOB.SLAVE.value:
+                cur_count += 1
+        dif = cur_count-no_of_slaves
+        app.logger.info("Current no. of slaves: %s", cur_count)
+        s = "Spawning "+str(abs(dif))+" new slaves " if dif <= 0 else "Removing "+str(dif)+" slaves"
+        app.logger.info(s)
+
+        while dif < 0:
+            # Scale Up!
+            spawn_container(JOB.SLAVE)  # Make a new slave container
+            dif += 1
+
+        i = 0
+        while dif > 0 and i < len(cls):
+            # Remove slave containers
+            container = cls[i]
+            ip_add = container.attrs['NetworkSettings']['Networks']['dbaas-net']['IPAddress']
+            res = get("http://" + ip_add + "/control/v1/getstatus")
+            if res.json()[0] == JOB.SLAVE.value:
+                app.logger.info("Removing Slave Container with name: %s", container.name)
+                container.remove(force=True)
+                dif -= 1
+            i += 1
+        counter.value = 0
+
+
+@app.before_first_request
+def start_timer():
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=scaling, trigger="interval", seconds=120)
+    scheduler.start()
+    atexit.register(lambda: scheduler.shutdown())
+
+
 class ReadRpcClient(object):
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
         self.channel = self.connection.channel()
         result = self.channel.queue_declare(queue='', exclusive=True)
         self.callback_queue = result.method.queue
-        self.channel.basic_consume(queue=self.callback_queue,on_message_callback=self.on_response,auto_ack=True)
+        self.channel.basic_consume(queue=self.callback_queue, on_message_callback=self.on_response, auto_ack=True)
 
     def on_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
             self.response = json.loads(body)
 
-    def call(self,request):
-       
+    def call(self, request):
         self.response = None
         self.corr_id = str(uuid.uuid4())
         self.channel.basic_publish(
@@ -64,14 +146,15 @@ class ReadRpcClient(object):
         while self.response is None:
             if (retries == 5):
                 break
-            retries +=1
+            retries += 1
             self.connection.process_data_events()
             time.sleep(0.5 * retries)
-            
+
         if (self.response):
-            return self.response["data"],self.response["status"]
+            return self.response["data"], self.response["status"]
         else:
-            return {}, 503 #service unavailable
+            return {}, 503  # service unavailable
+
 
 class WriteRpcClient(object):
     def __init__(self):
@@ -79,14 +162,14 @@ class WriteRpcClient(object):
         self.channel = self.connection.channel()
         result = self.channel.queue_declare(queue='', exclusive=True)
         self.callback_queue = result.method.queue
-        self.channel.basic_consume(queue=self.callback_queue,on_message_callback=self.on_response,auto_ack=True)
+        self.channel.basic_consume(queue=self.callback_queue, on_message_callback=self.on_response, auto_ack=True)
 
     def on_response(self, ch, method, props, body):
         if self.corr_id == props.correlation_id:
             self.response = json.loads(body)
 
-    def call(self,request):
-        
+    def call(self, request):
+
         self.response = None
         self.corr_id = str(uuid.uuid4())
         self.channel.basic_publish(
@@ -101,14 +184,16 @@ class WriteRpcClient(object):
         while self.response is None:
             if (retries == 5):
                 break
-            retries +=1
+            retries += 1
             self.connection.process_data_events()
             time.sleep(0.5 * retries)
         if (self.response):
-            return self.response["data"],self.response["status"]
+            return self.response["data"], self.response["status"]
         else:
-            return {}, 503 #service unavailable
-#@app.after_request
+            return {}, 503  # service unavailable
+
+
+# @app.after_request
 def after(response):
     with open("orchestrator_logs.csv", 'a') as log:
         if os.stat("orchestrator_logs.csv").st_size == 0:
@@ -123,38 +208,122 @@ def after(response):
             print(response.json, file=log)
     return response
 
+
 def mydatetime(value):
     datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
     return value
 
+
 class DBWrite(Resource):
     def post(self):
-        #write request received, add to the writeQ
-        #channel_w.basic_publish(exchange = '',routing_key='writeQ',body=json.dumps(request.get_json()))
+        # write request received, add to the writeQ
+
         writer = WriteRpcClient()
         response = writer.call(request.get_json())
         return response
 
+
 class DBRead(Resource):
     def post(self):
-        #read request received, add to the readQ
-        #channel_r.basic_publish(exchange = '',routing_key='readQ',body=json.dumps(request.get_json()))
+        # read request received, add to the readQ
+
+        # Incrementing Read API Count (this is thread and process safe)
+        with counter.get_lock():
+            counter.value += 1
+            app.logger.info("Read API Count: %s", counter.value)
+
         reader = ReadRpcClient()
         response = reader.call(request.get_json())
         return response
 
+
 class DBClear(Resource):
     def post(self):
-        #clear request (write), add to the writeQ
-        data = {"query":"clear"}
-        #channel_w.basic_publish(exchange = '',routing_key='writeQ',body=json.dumps(data))
+        # clear request (write), add to the writeQ
+        data = {"query": "clear"}
         writer = WriteRpcClient()
         response = writer.call(data)
         return response
 
+
+class WorkerList(Resource):
+    def get(self):
+        client = docker.from_env()
+        cls = client.containers.list(filters={"ancestor": "worker"})
+        pids = []
+        for cont in cls:
+            d = dict(cont.top())
+            pids.append(d["Processes"][0][0])
+        return sorted(map(int, pids))
+
+
+class CrashMaster(Resource):
+    def post(self):
+        client = docker.from_env()
+        cls = client.containers.list(filters={"ancestor": "worker"})
+        for cont in cls:
+            res = get("http://" + cont.name + "/control/v1/getstatus")
+            app.logger.info(res)
+            if res.json()[0] == JOB.MASTER.value:
+                # Get PID
+                d = dict(cont.top())
+                pid = int(d["Processes"][0][0])
+                app.logger.info("Crash Master with PID: %s", pid)
+                # Crash Master
+                cont.remove(force=True)
+                return [pid]
+        return {}, 400  # No master found
+
+
+class CrashSlave(Resource):
+    def post(self):
+        client = docker.from_env()
+        cls = client.containers.list(filters={"ancestor": "worker"})
+        max_pid_cont = None
+        max_pid = -1
+        for cont in cls:
+            res = get("http://" + cont.name + "/control/v1/getstatus")
+            if res.json()[0] == JOB.SLAVE.value:
+                # Get PID
+                d = dict(cont.top())
+                pid = int(d["Processes"][0][0])
+                # Check if pid higher than max pid
+                if (pid > max_pid):
+                    max_pid_cont = cont
+                    max_pid = pid
+        if max_pid != -1:
+            # Crash Slave
+            app.logger.info("Crashed Slave with PID: %s", max_pid)
+            max_pid_cont.remove(force=True)
+            return [max_pid]
+        return {}, 400  # No slave found
+
+
+@app.route("/cleanup", methods=['DELETE'])
+def destroy_containers():
+    print("Doing container clean up.")
+    client = docker.from_env()
+    cls = client.containers.list(filters={"ancestor": "worker"})
+    for cont in cls:
+        cont.remove(force=True)
+    return {}, 200
+
+
 api.add_resource(DBWrite, '/api/v1/db/write')
 api.add_resource(DBRead, '/api/v1/db/read')
 api.add_resource(DBClear, '/api/v1/db/clear')
+api.add_resource(WorkerList, '/api/v1/worker/list')
+api.add_resource(CrashMaster, '/api/v1/crash/master')
+api.add_resource(CrashSlave, '/api/v1/crash/slave')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9500)
+    try:
+        # Spawning one master and slave container each to begin with
+        spawn_container(JOB.MASTER)
+        spawn_container(JOB.SLAVE)
+        app.run(host='0.0.0.0', port=9500, debug=True, use_reloader=False)
+    except Exception:
+        print(traceback.format_exc())
+    finally:
+        # Always clean up spawned containers
+        destroy_containers()
