@@ -2,6 +2,7 @@ from sqlalchemy import (Column, DateTime, ForeignKey, Integer, MetaData, String,
 from sqlalchemy.engine import Engine
 from sqlite3 import Connection as SQLite3Connection
 
+
 @event.listens_for(Engine, "connect")
 def _set_sqlite_pragma(dbapi_connection, connection_record):
     if isinstance(dbapi_connection, SQLite3Connection):
@@ -9,7 +10,9 @@ def _set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.execute("PRAGMA foreign_keys=ON;")
         cursor.close()
 
+
 class DataBase:
+
     def __init__(self, dbname=''):
         self.db_engine = create_engine(f'sqlite:///{dbname}')
 
@@ -23,10 +26,6 @@ class DataBase:
                       Column('source', Integer, nullable=False),
                       Column('destination', Integer, nullable=False)
                       )
-
-        users = Table('users', metadata,
-                      Column('username', String, primary_key=True),
-                      Column('password', String, nullable=False))
 
         riders = Table('riders', metadata,
                        Column('rideId', None, ForeignKey('rides.rideId', ondelete='CASCADE'), primary_key=True),
@@ -70,7 +69,7 @@ class DataBase:
         return list(res) if res else False
 
 
-db = DataBase('data.db')
+db = DataBase('rides.db')
 execute = db.execute
 fetchall = db.fetchall
 fetchone = db.fetchone

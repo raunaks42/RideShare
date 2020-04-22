@@ -1,12 +1,13 @@
-import os
 from datetime import datetime
-from logging.config import dictConfig
-
-import flask_restful
-from database import execute, fetchall
-from flask import Flask, request, current_app, abort
+from flask import Flask, jsonify, request, current_app, abort
 from flask_restful import Api, Resource, reqparse
+import pandas as pd
+import flask_restful
+from requests import post,get
 from werkzeug.exceptions import HTTPException
+import os
+from database import execute, fetchone, fetchall
+from logging.config import dictConfig
 
 dictConfig({
     'version': 1,
@@ -30,7 +31,7 @@ api = Api(app)
 def log_request_info():
     incrementCount()
 
-@app.after_request
+#@app.after_request
 def after(response):
     with open("persistent_db_log.csv", 'a') as log:
         if os.stat("persistent_db_log.csv").st_size == 0:
@@ -199,11 +200,10 @@ class ReqCount(Resource):
         execute(query)
         return {}, 200
 
-
 api.add_resource(DBWrite, '/internal/v1/db/write')
 api.add_resource(DBRead, '/internal/v1/db/read')
 api.add_resource(DBClear, '/internal/v1/db/clear')
 api.add_resource(ReqCount, '/internal/v1/_count')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8500,debug=True)
+    app.run(host='0.0.0.0', port=8500)

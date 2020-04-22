@@ -6,11 +6,19 @@ import flask_restful
 from requests import post
 from werkzeug.exceptions import HTTPException
 import os
+from database import execute, fetchone, fetchall
 
 app = Flask(__name__)
 api = Api(app)
 
-DbURL = "http://orchestrator:9500"
+port = 80
+URL = "http://localhost:"+str(port)
+
+
+@app.before_request
+def log_request_info():
+    if request.path == '/api/v1/users' or request.path.startswith('/api/v1/users/'):
+        incrementCount()
 
 @app.after_request
 def after(response):
@@ -44,6 +52,10 @@ def sha1(value):
 def mydatetime(value):
     datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
     return value
+
+def incrementCount():
+    query = "UPDATE APICOUNT SET COUNT = COUNT + 1"
+    execute(query)
 
 class Argument(reqparse.Argument):
     def handle_validation_error(self, error, bundle_errors):
@@ -123,7 +135,7 @@ class Users(Resource):
                 'password': password
             }
         }
-        res = post(DbURL + "/api/v1/db/write", json=req)
+        res = post(URL + "/api/v1/db/write", json=req)
         return {}, (201 if res.status_code == 200 else 400)  # 400 if insert fail
 
     def get(self):
@@ -132,7 +144,7 @@ class Users(Resource):
                 'table': 'users',
                 'columns': ['username']
             }
-            res = post(DbURL + "/api/v1/db/read", json=req)
+            res = post(URL + "/api/v1/db/read", json=req)
             res_json = [user["username"] for user in res.json()]
             return res_json, (200 if res_json else 204)
         return {}, 400  # non empty request json or username doesnt exist
@@ -149,7 +161,7 @@ class User(Resource):
                     'username': username
                 }
             }
-            res = post(DbURL + "/api/v1/db/read", json=req)
+            res = post(URL + "/api/v1/db/read", json=req)
             if res.json():
                 req = {
                     'query': 'delete',
@@ -158,13 +170,97 @@ class User(Resource):
                         'username': username
                     }
                 }
-                post(DbURL + "/api/v1/db/write", json=req)
+                post(URL + "/api/v1/db/write", json=req)
                 return {}, 200
         return {}, 400  # non empty request json or username doesnt exist
 
 
+class DBWrite(Resource):
+    def __init__(self):
+        self.reqparser = RequestParser()
+        self.reqparser.add_argument(Argument('query', type=str, required=True))
+        self.reqparser.add_argument(Argument('table', type=str, required=True))
+        self.reqparser.add_argument(Argument('values', type=dict))
+        self.reqparser.add_argument(Argument('condition', type=dict))
+        super(DBWrite, self).__init__()
+
+    def post(self):
+        args = self.reqparser.parse_args()
+        query = args['query']
+        table = args['table']
+
+        if query == 'insert':
+            if 'values' in args:
+                values = args['values']
+                insert_query = '''
+                    INSERT INTO ''' + table + '(' + ','.join(values.keys()) + ') ' + '''
+                    VALUES ''' + '(' + ','.join(map(repr, values.values())) + ')'
+                if execute(insert_query):
+                    return {}, 200
+            return {}, 400
+
+        elif query == 'delete':
+            if 'condition' in args:
+                condition = args['condition']
+                delete_query = '''
+                    DELETE FROM ''' + table + '''
+                    WHERE ''' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), condition.keys(), condition.values()))
+                execute(delete_query)
+                return {}, 200
+            return {}, 400
+
+
+class DBRead(Resource):
+    def post(self):
+        args = request.get_json()
+        table = args['table']
+        if 'columns' in args:
+            columns = args['columns']
+            select_query = '''
+                SELECT ''' + ','.join(columns) + '''
+                FROM ''' + table + '''
+                ''' + ('WHERE ' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), args['condition'].keys(),
+                                                   args['condition'].values())) if 'condition' in args else '')
+            rows = fetchall(select_query)
+            res = []
+            if rows:
+                for row in rows:
+                    res.append({columns[i]: row[i] for i in range(len(columns))})
+            return res, 200
+        return {}, 400
+
+
+class DBClear(Resource):
+    def post(self):
+        tables = ["users"]
+        for table in tables:
+            delete_query = '''
+            DELETE FROM ''' + table
+            execute(delete_query)
+        return {}, 200
+
+class ReqCount(Resource):
+    def get(self):
+        query = '''SELECT * FROM APICOUNT'''
+        rows = fetchall(query)
+        if rows:
+            for row in rows:
+                return [row[0]], 200
+        else:
+            return [-100], 200 #Should never actually reach here. If it reaches here, database tables not set up properly.
+    def delete(self):
+        query = '''UPDATE APICOUNT SET COUNT=0'''
+        execute(query)
+        return {}, 200
+
+
 api.add_resource(Users, '/api/v1/users')
 api.add_resource(User, '/api/v1/users/<string:username>')
+api.add_resource(DBWrite, '/api/v1/db/write')
+api.add_resource(DBRead, '/api/v1/db/read')
+api.add_resource(DBClear, '/api/v1/db/clear')
+api.add_resource(ReqCount, '/api/v1/_count')
+
 
 
 if __name__ == '__main__':

@@ -1,11 +1,15 @@
+import pika
+import flask
 import enum
-import subprocess
-from logging.config import dictConfig
-from threading import Lock
-
 from flask import Flask
 from flask_api import status
-from flask_restful import Api, Resource
+from threading import Lock
+from flask_restful import Api, Resource, reqparse
+from database import execute, fetchone, fetchall
+import subprocess
+import json
+import sys
+from logging.config import dictConfig
 
 dictConfig({
     'version': 1,
@@ -76,17 +80,8 @@ class Stop(Resource):
                 listeners[JOB.SLAVE].terminate()
         return status.HTTP_200_OK
 
-
-class GetStatus(Resource):
-    def get(self):
-        global job_type
-        return [int(job_type.value)], status.HTTP_200_OK
-
-
-api.add_resource(Start, "/control/v1/start/<int:job>")
-api.add_resource(Stop, "/control/v1/stop")
-api.add_resource(GetStatus, "/control/v1/getstatus")
-
+api.add_resource(Start,"/control/v1/start/<int:job>")
+api.add_resource(Stop,"/control/v1/stop")
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0",port = 80)
+    app.run(host="0.0.0.0",port = 8100)

@@ -7,13 +7,20 @@ import flask_restful
 from requests import post,get
 from werkzeug.exceptions import HTTPException
 import os
+from database import execute, fetchone, fetchall
 
 app = Flask(__name__)
 api = Api(app)
 
-USER_URL = "http://users"  # Needs to be replaced with load balancer URL while deploying
-DB_URL = "http://orchestrator:9500"
-PUBLIC_IP_OF_RIDES = "http://localhost:8080"  # To set header for request to users service.
+port = 80
+URL = "http://localhost:"+str(port)
+URL_User = "http://rideshare-load-balancer-947103600.us-east-1.elb.amazonaws.com"
+
+
+@app.before_request
+def log_request_info():
+    if (request.path == '/api/v1/rides' or request.path.startswith('/api/v1/rides/')):
+        incrementCount()
 
 @app.after_request
 def after(response):
@@ -48,6 +55,9 @@ def mydatetime(value):
     datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
     return value
 
+def incrementCount():
+    query = "UPDATE APICOUNT SET COUNT = COUNT + 1"
+    execute(query)
 
 class Argument(reqparse.Argument):
     def handle_validation_error(self, error, bundle_errors):
@@ -125,7 +135,7 @@ class Rides(Resource):
 
         #Check for username
 
-        res = get(USER_URL + "/api/v1/users", headers={"Origin": PUBLIC_IP_OF_RIDES})
+        res = get(URL_User + "/api/v1/users", headers={"Origin":"18.211.40.79"})
         if res.status_code == 204:
             return {}, 400  # no users
 
@@ -150,7 +160,7 @@ class Rides(Resource):
                     'destination': destination
                 }
             }
-            res1 = post(DB_URL + "/api/v1/db/write", json=req)
+            res1 = post(URL + "/api/v1/db/write", json=req)
             if res1.status_code == 200:
                 return {}, 201
         return {}, 400  # if source/destination same or incorrect or username doesnt exist
@@ -173,7 +183,7 @@ class Rides(Resource):
                     'destination': destination
                 }
             }
-            res = post(DB_URL + "/api/v1/db/read", json=req)
+            res = post(URL + "/api/v1/db/read", json=req)
             res_json = [ride for ride in res.json() if
                         datetime.strptime(ride['timestamp'], '%d-%m-%Y:%S-%M-%H') > datetime.now()]
             for ride in res_json:
@@ -192,7 +202,7 @@ class Ride(Resource):
                     'rideId': id
                 }
             }
-            res = post(DB_URL + "/api/v1/db/read", json=req)
+            res = post(URL + "/api/v1/db/read", json=req)
             if res.json():
                 res_json = res.json()[0]
                 req = {
@@ -202,7 +212,7 @@ class Ride(Resource):
                         'rideId': id
                     }
                 }
-                resr = post(DB_URL + "/api/v1/db/read", json=req)
+                resr = post(URL + "/api/v1/db/read", json=req)
                 res_json['users'] = [i['user'] for i in resr.json()]
                 return res_json, 200
             return {}, 204  # if no rides found
@@ -216,7 +226,7 @@ class Ride(Resource):
         username = args['username']
 
         # Check for username
-        res = get(USER_URL + "/api/v1/users", headers={"Origin":PUBLIC_IP_OF_RIDES})
+        res = get(URL_User + "/api/v1/users", headers={"Origin":"18.211.40.79"})
 
         if res.status_code == 204:
             return {}, 400  # no users
@@ -237,7 +247,7 @@ class Ride(Resource):
             }
         }
 
-        res = post(DB_URL + "/api/v1/db/read", json=req)
+        res = post(URL + "/api/v1/db/read", json=req)
 
         #Checking if user trying to join is not same as one who created ride
         for ride in res.json():
@@ -252,7 +262,7 @@ class Ride(Resource):
                     'created_by': username
                 }
             }
-            resr = post(DB_URL + "/api/v1/db/read", json=req)
+            resr = post(URL + "/api/v1/db/read", json=req)
             req = {
                 'query': 'insert',
                 'table': 'riders',
@@ -261,7 +271,7 @@ class Ride(Resource):
                     'user': username
                 }
             }
-            resw = post(DB_URL + "/api/v1/db/write", json=req)
+            resw = post(URL + "/api/v1/db/write", json=req)
             return {}, (200 if (
                         resw.status_code == 200 and not resr.json()) else 400)  # 400 if user not found or user already joined ride or user is creator
         return {}, 204  # ride not found
@@ -275,7 +285,7 @@ class Ride(Resource):
                     'rideId': id
                 }
             }
-            res = post(DB_URL + "/api/v1/db/read", json=req)
+            res = post(URL + "/api/v1/db/read", json=req)
             if res.json():
                 req = {
                     'query': 'delete',
@@ -284,7 +294,7 @@ class Ride(Resource):
                         'rideId': id
                     }
                 }
-                post(DB_URL + "/api/v1/db/write", json=req)
+                post(URL + "/api/v1/db/write", json=req)
                 req = {
                     'query': 'delete',
                     'table': 'rides',
@@ -292,32 +302,105 @@ class Ride(Resource):
                         'rideId': id
                     }
                 }
-                post(DB_URL + "/api/v1/db/write", json=req)
+                post(URL + "/api/v1/db/write", json=req)
                 return {}, 200
         return {}, 400  # if request json not empty or ride not found
 
 
+class DBWrite(Resource):
+    def __init__(self):
+        self.reqparser = RequestParser()
+        self.reqparser.add_argument(Argument('query', type=str, required=True))
+        self.reqparser.add_argument(Argument('table', type=str, required=True))
+        self.reqparser.add_argument(Argument('values', type=dict))
+        self.reqparser.add_argument(Argument('condition', type=dict))
+        super(DBWrite, self).__init__()
+
+    def post(self):
+        args = self.reqparser.parse_args()
+        query = args['query']
+        table = args['table']
+
+        if query == 'insert':
+            if 'values' in args:
+                values = args['values']
+                insert_query = '''
+                    INSERT INTO ''' + table + '(' + ','.join(values.keys()) + ') ' + '''
+                    VALUES ''' + '(' + ','.join(map(repr, values.values())) + ')'
+                if execute(insert_query):
+                    return {}, 200
+            return {}, 400
+
+        elif query == 'delete':
+            if 'condition' in args:
+                condition = args['condition']
+                delete_query = '''
+                    DELETE FROM ''' + table + '''
+                    WHERE ''' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), condition.keys(), condition.values()))
+                execute(delete_query)
+                return {}, 200
+            return {}, 400
+
+
+class DBRead(Resource):
+    def post(self):
+        args = request.get_json()
+        table = args['table']
+        if 'columns' in args:
+            columns = args['columns']
+            select_query = '''
+                SELECT ''' + ','.join(columns) + '''
+                FROM ''' + table + '''
+                ''' + ('WHERE ' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), args['condition'].keys(),
+                                                   args['condition'].values())) if 'condition' in args else '')
+            rows = fetchall(select_query)
+            res = []
+            if rows:
+                for row in rows:
+                    res.append({columns[i]: row[i] for i in range(len(columns))})
+            return res, 200
+        return {}, 400
+
+
+class DBClear(Resource):
+    def post(self):
+        tables = ["rides", "riders"]
+        for table in tables:
+            delete_query = '''
+            DELETE FROM ''' + table
+            execute(delete_query)
+        return {}, 200
+
+class ReqCount(Resource):
+    def get(self):
+        query = '''SELECT * FROM APICOUNT'''
+        rows = fetchall(query)
+        if rows:
+            for row in rows:
+                return [row[0]], 200
+        else:
+            return [-100], 200 #Should never actually reach here. If it reaches here, database tables not set up properly.
+    def delete(self):
+        query = '''UPDATE APICOUNT SET COUNT=0'''
+        execute(query)
+        return {}, 200
+
 class RideCount(Resource):
     def get(self):
-        req = {
-            'table': 'rides',
-            'columns': ['count(*)'],
-        }
-        res = post(DB_URL + "/api/v1/db/read", json=req)
-        for row in res.json():
-            return [row["count(*)"]], 200
-        return {}, 400
-        # Original
-        # query = '''SELECT COUNT(*) FROM RIDES'''
-        #rows = fetchall(query)
-        #if rows:
-        #    for row in rows:
-        #        return [row[0]], 200
+        query = '''SELECT COUNT(*) FROM RIDES'''
+        rows = fetchall(query)
+        if rows:
+            for row in rows:
+                return [row[0]], 200
 
 
 api.add_resource(Rides, '/api/v1/rides')
 api.add_resource(Ride, '/api/v1/rides/<int:id>')
 api.add_resource(RideCount, '/api/v1/rides/count')
+api.add_resource(DBWrite, '/api/v1/db/write')
+api.add_resource(DBRead, '/api/v1/db/read')
+api.add_resource(DBClear, '/api/v1/db/clear')
+api.add_resource(ReqCount, '/api/v1/_count')
 
 
 if __name__ == '__main__':

@@ -7,13 +7,9 @@ services:
     volumes:
       - ./rides:/app
     expose:
-      - 8201
+      - 80
     ports:
-      - 8201:80
+      - 80:80
     container_name: rides
     environment:
       - TEAM_NAME=CC_0072_0206_0262_0704
-networks:
-  default:
-    external:
-      name: dbaas-net
