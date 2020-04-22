@@ -1,10 +1,9 @@
 version: '3.4'
 services:
+
   db-service:
     image: persdb:latest
     build: ./persdb
-    # volumes:
-    #   - ./persdb:/app
     expose:
       - 8500
     ports:
@@ -18,7 +17,8 @@ services:
     build: ./orchestrator
     depends_on:
       - "db-service"
-      #- "bunny"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - 9500
     ports:
@@ -27,39 +27,8 @@ services:
     environment:
       - TEAM_NAME=CC_0072_0206_0262_0704
 
-  worker:
-    image: worker:latest
-    build: ./worker
-    depends_on:
-      - "db-service"
-      #- "bunny"
-    expose:
-      - 8100
-    ports:
-      - 8100:8100
-    container_name: worker
-    environment:
-      - TEAM_NAME=CC_0072_0206_0262_0704
-    
-  master:
-    image: worker:latest
-    build: ./worker
-    depends_on:
-      - "db-service"
-      #- "bunny"
-    expose:
-      - 8100
-    ports:
-      - 8101:8100
-    container_name: master
-    environment:
-      - TEAM_NAME=CC_0072_0206_0262_0704
-
-  # bunny:
-  #   image: rabbitmq:latest
-  #   expose:
-  #     - 5672
-  #   ports:
-  #     - 9000:5672
-  #   container_name: bunny
+networks:
+  default:
+    external:
+      name: dbaas-net
     

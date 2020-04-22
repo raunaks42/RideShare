@@ -20,3 +20,5 @@ Werkzeug==1.0.0
 gunicorn
 pika
 flask_api
+docker==4.2.0
+APScheduler==3.6.3

@@ -1,6 +1,8 @@
-from sqlalchemy import (Column, DateTime, ForeignKey, Integer, MetaData, String, Table, create_engine, event)
-from sqlalchemy.engine import Engine
 from sqlite3 import Connection as SQLite3Connection
+
+from sqlalchemy import (Column, ForeignKey, Integer, MetaData, String, Table, create_engine, event)
+from sqlalchemy.engine import Engine
+
 
 @event.listens_for(Engine, "connect")
 def _set_sqlite_pragma(dbapi_connection, connection_record):

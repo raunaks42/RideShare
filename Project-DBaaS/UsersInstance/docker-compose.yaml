@@ -7,9 +7,13 @@ services:
     volumes:
       - ./users:/app
     expose:
-      - 80
+      - 8200
     ports:
-      - 80:80
+      - 8200:80
     container_name: users
     environment:
       - TEAM_NAME=CC_0072_0206_0262_0704
+networks:
+  default:
+    external:
+      name: dbaas-net
