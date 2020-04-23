@@ -13,6 +13,7 @@ def do_synchronize(ch,method,properties,body):
             db_write(action["query"],action["table"],action["values"],action["condition"])
         else:
             db_write(action["query"],action["table"],action["values"])
+    ch.basic_ack(delivery_tag=method.delivery_tag)
 
 def db_clear():
     tables = ["rides", "riders", "users"]
@@ -45,9 +46,9 @@ def db_write(query,table,values,condition=None):
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
 sync_channel = connection.channel()
-sync_channel.queue_declare("syncQ",durable=True)
+r = sync_channel.queue_declare("",exclusive=True)
 sync_channel.exchange_declare(exchange = "syncQ",exchange_type='fanout')
-sync_channel.queue_bind(exchange='syncQ',queue="syncQ",routing_key='syncQ')
-sync_channel.basic_consume(queue = 'syncQ', on_message_callback = do_synchronize)
+sync_channel.queue_bind(exchange='syncQ',queue=r.method.queue,routing_key='')
+sync_channel.basic_consume(queue = r.method.queue, on_message_callback = do_synchronize)
 print("SYNCHRO")
 sync_channel.start_consuming()

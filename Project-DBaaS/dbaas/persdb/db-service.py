@@ -4,10 +4,11 @@ from logging.config import dictConfig
 
 import flask_restful
 from database import execute, fetchall
-from flask import Flask, request, current_app, abort
+from flask import Flask, request, current_app, abort,send_file
 from flask_restful import Api, Resource, reqparse
 from werkzeug.exceptions import HTTPException
-
+import threading
+filelock = threading.Lock()
 dictConfig({
     'version': 1,
     'formatters': {'default': {
@@ -58,8 +59,11 @@ def mydatetime(value):
     return value
 
 def incrementCount():
+    global filelock
     query = "UPDATE APICOUNT SET COUNT = COUNT + 1"
+    filelock.acquire()
     execute(query)
+    filelock.release()
 
 class Argument(reqparse.Argument):
     def handle_validation_error(self, error, bundle_errors):
@@ -132,6 +136,7 @@ class DBWrite(Resource):
         super(DBWrite, self).__init__()
 
     def post(self):
+        global filelock
         args = self.reqparser.parse_args()
         query = args['query']
         table = args['table']
@@ -141,8 +146,11 @@ class DBWrite(Resource):
                 insert_query = '''
                     INSERT INTO ''' + table + '(' + ','.join(values.keys()) + ') ' + '''
                     VALUES ''' + '(' + ','.join(map(repr, values.values())) + ')'
+                filelock.acquire()
                 if execute(insert_query):
+                    filelock.release()
                     return {}, 200
+                filelock.release()
             return {}, 400
 
         elif query == 'delete':
@@ -151,7 +159,9 @@ class DBWrite(Resource):
                 delete_query = '''
                     DELETE FROM ''' + table + '''
                     WHERE ''' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), condition.keys(), condition.values()))
+                filelock.acquire()
                 execute(delete_query)
+                filelock.release()
                 return {}, 200
             return {}, 400
 
@@ -178,11 +188,14 @@ class DBRead(Resource):
 
 class DBClear(Resource):
     def post(self):
+        global filelock
         tables = ["rides", "riders"]
         for table in tables:
             delete_query = '''
             DELETE FROM ''' + table
+            filelock.acquire()
             execute(delete_query)
+            filelock.release()
         return {}, 200
 
 class ReqCount(Resource):
@@ -196,14 +209,25 @@ class ReqCount(Resource):
             return [-100], 200 #Should never actually reach here. If it reaches here, database tables not set up properly.
     def delete(self):
         query = '''UPDATE APICOUNT SET COUNT=0'''
+        global filelock
+        filelock.acquire()
         execute(query)
+        filelock.release()
         return {}, 200
 
+class getDB(Resource):
+    def get(self):
+        global filelock
+        filelock.acquire()
+        res =  send_file("persistent.db")
+        filelock.release()
+        return res
 
 api.add_resource(DBWrite, '/internal/v1/db/write')
 api.add_resource(DBRead, '/internal/v1/db/read')
 api.add_resource(DBClear, '/internal/v1/db/clear')
 api.add_resource(ReqCount, '/internal/v1/_count')
+api.add_resource(getDB, '/internal/v1/getdb')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8500,debug=True)

@@ -70,7 +70,7 @@ class DataBase:
         return list(res) if res else False
 
 
-db = DataBase('persisent.db')
+db = DataBase('persistent.db')
 execute = db.execute
 fetchall = db.fetchall
 fetchone = db.fetchone

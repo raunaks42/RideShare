@@ -2,7 +2,7 @@ import enum
 import subprocess
 from logging.config import dictConfig
 from threading import Lock
-
+import requests
 from flask import Flask
 from flask_api import status
 from flask_restful import Api, Resource
@@ -33,6 +33,15 @@ class JOB(enum.Enum):
 job_type = JOB.NONE #worker is not started by default
 listeners = dict()
 job_dict = {0:JOB.NONE,1:JOB.MASTER,2:JOB.SLAVE,3:JOB.SYNC}
+
+db = requests.get("http://persdb:8500/internal/v1/getdb") #getdb file while starting
+if (db.status_code == 200):
+    databasefile = open("data.db","wb")
+    databasefile.write(db.content) #write to the db file
+    databasefile.close()
+else:
+    app.logger.info("ERROR: Unable to retrieve DB")
+
 sychro = subprocess.Popen(["python3","./synchro.py"])
 class Start(Resource):
     def get(self,job):
@@ -47,7 +56,6 @@ class Start(Resource):
             job_type = job_dict[job]
             myjob = job_type
         mutex.release()
-        app.logger.info("whatsup")
         if (myjob == JOB.MASTER):
             app.logger.info('Starting Master')
             listeners[JOB.MASTER] = subprocess.Popen(["python3","./master.py"])    

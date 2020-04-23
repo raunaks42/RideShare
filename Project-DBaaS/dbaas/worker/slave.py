@@ -31,6 +31,7 @@ def do_slave_work(ch, method, properties, body):
     ch.basic_publish(exchange='',routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = properties.correlation_id),body=json.dumps(output_structure))
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
+
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
 read_channel = connection.channel()
 read_channel.queue_declare("readQ")
