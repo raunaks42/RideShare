@@ -21,10 +21,12 @@ Use the following Postman Collection to test the RideShare APIs,
     
 ##### Auto Scaling
 The orchestrator keeps track of the number of read requests in every 2 min.
-0 – 20 requests – 1 slave container is running
-21 – 40 requests – 2 slave containers are running
-41 – 60 requests – 3 slave containers are running
+- 0 – 20 requests – 1 slave container is running
+- 21 – 40 requests – 2 slave containers are running
+- 41 – 60 requests – 3 slave containers are running
+
 and so on.
+
 To test this and make requests quickly, you can use the ```./dbaas/scale_up.sh``` script. This makes 21 async read calls.
 
 
