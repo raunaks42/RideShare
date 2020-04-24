@@ -6,13 +6,20 @@ def do_synchronize(ch,method,properties,body):
     #sync local dbase for eventual consistency
     action = json.loads(body)['request'] #deserialize the body
     print("SYNCHRO RECEIVED")
+    print(action)
     if (action['query'] == "clear"):
         db_clear()
     else:
+        CONDITION = None
+        VALUES = None
+        QUERY = action["query"]
+        TABLE = action["table"]
         if ("condition" in action):
-            db_write(action["query"],action["table"],action["values"],action["condition"])
-        else:
-            db_write(action["query"],action["table"],action["values"])
+            CONDITION = action["condition"]
+        if ("values" in action):
+            VALUES = action["values"]
+        db_write(QUERY,TABLE,VALUES,CONDITION)
+
     ch.basic_ack(delivery_tag=method.delivery_tag)
 
 def db_clear():
@@ -23,7 +30,7 @@ def db_clear():
         execute(delete_query)
     return {}, 200
 
-def db_write(query,table,values,condition=None):
+def db_write(query,table,values=None,condition=None):
     query = query
     table = table
     if query == 'insert':
