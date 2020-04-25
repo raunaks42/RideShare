@@ -28,6 +28,8 @@ def db_clear():
         delete_query = '''
         DELETE FROM ''' + table
         execute(delete_query)
+    query = '''UPDATE APICOUNT SET COUNT=0'''
+    execute(query)
     return {}, 200
 
 def db_write(query,table,values=None,condition=None):
@@ -48,6 +50,15 @@ def db_write(query,table,values=None,condition=None):
                 DELETE FROM ''' + table + '''
                 WHERE ''' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), condition.keys(), condition.values()))
             execute(delete_query)
+            return 200
+        return 400
+    elif query == 'update':
+        if condition:
+            update_query = '''
+                       UPDATE ''' + table + ''' 
+                       SET ''' + ','.join(map(lambda x, y: x + ' = ' + y, values.keys(), values.values())) + ''' 
+                       WHERE ''' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), condition.keys(), condition.values()))
+            execute(update_query)
             return 200
         return 400
 

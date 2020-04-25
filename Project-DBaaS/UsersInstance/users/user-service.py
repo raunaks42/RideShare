@@ -10,7 +10,25 @@ import os
 app = Flask(__name__)
 api = Api(app)
 
-DbURL = "http://orchestrator:9500"
+DB_URL = "http://orchestrator:9500"
+
+
+@app.before_request
+def log_request_info():
+    if request.path == '/api/v1/users' or request.path.startswith('/api/v1/users/'):
+        #  Increment Count
+        req = {
+            'query': 'update',
+            'table': 'apicount',
+            'values': {
+                'count': 'count + 1'
+            },
+            'condition': {
+                'service_name': "users"
+            }
+        }
+        post(DB_URL + "/api/v1/db/write", json=req)
+
 
 @app.after_request
 def after(response):
@@ -123,7 +141,7 @@ class Users(Resource):
                 'password': password
             }
         }
-        res = post(DbURL + "/api/v1/db/write", json=req)
+        res = post(DB_URL + "/api/v1/db/write", json=req)
         return {}, (201 if res.status_code == 200 else 400)  # 400 if insert fail
 
     def get(self):
@@ -132,7 +150,7 @@ class Users(Resource):
                 'table': 'users',
                 'columns': ['username']
             }
-            res = post(DbURL + "/api/v1/db/read", json=req)
+            res = post(DB_URL + "/api/v1/db/read", json=req)
             res_json = [user["username"] for user in res.json()]
             return res_json, (200 if res_json else 204)
         return {}, 400  # non empty request json or username doesnt exist
@@ -149,7 +167,7 @@ class User(Resource):
                     'username': username
                 }
             }
-            res = post(DbURL + "/api/v1/db/read", json=req)
+            res = post(DB_URL + "/api/v1/db/read", json=req)
             if res.json():
                 req = {
                     'query': 'delete',
@@ -158,13 +176,44 @@ class User(Resource):
                         'username': username
                     }
                 }
-                post(DbURL + "/api/v1/db/write", json=req)
+                post(DB_URL + "/api/v1/db/write", json=req)
                 return {}, 200
         return {}, 400  # non empty request json or username doesnt exist
 
 
+class ReqCount(Resource):
+    def get(self):
+        req = {
+            'table': 'apicount',
+            'columns': ['count'],
+            'condition': {
+                'service_name': "users"
+            }
+        }
+        res = post(DB_URL + "/api/v1/db/read", json=req)
+        for row in res.json():
+            return [row["count"]], 200
+        return {}, 503
+
+
+    def delete(self):
+        #  Reset Count to 0
+        req = {
+            'query': 'update',
+            'table': 'apicount',
+            'values': {
+                'count': '0'
+            },
+            'condition': {
+                'service_name': "users"
+            }
+        }
+        res = post(DB_URL + "/api/v1/db/write", json=req)
+        return {}, res.status_code
+
 api.add_resource(Users, '/api/v1/users')
 api.add_resource(User, '/api/v1/users/<string:username>')
+api.add_resource(ReqCount, '/api/v1/_count')
 
 
 if __name__ == '__main__':

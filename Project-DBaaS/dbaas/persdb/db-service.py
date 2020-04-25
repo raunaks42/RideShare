@@ -27,10 +27,6 @@ dictConfig({
 app = Flask(__name__)
 api = Api(app)
 
-#@app.before_request
-def log_request_info():
-    incrementCount()
-
 @app.after_request
 def after(response):
     with open("persistent_db_log.csv", 'a') as log:
@@ -46,24 +42,6 @@ def after(response):
             print(response.json, file=log)
     return response
 
-
-def sha1(value):
-    if len(value) == 40:
-        int(value, 16)
-        return value
-    raise ValueError('Length is not 40')
-
-
-def mydatetime(value):
-    datetime.strptime(value, '%d-%m-%Y:%S-%M-%H')
-    return value
-
-def incrementCount():
-    global filelock
-    query = "UPDATE APICOUNT SET COUNT = COUNT + 1"
-    filelock.acquire()
-    execute(query)
-    filelock.release()
 
 class Argument(reqparse.Argument):
     def handle_validation_error(self, error, bundle_errors):
@@ -165,6 +143,20 @@ class DBWrite(Resource):
                 return {}, 200
             return {}, 400
 
+        elif query == 'update':
+            if 'condition' in args:
+                condition = args['condition']
+                valuesz = args['values']
+                update_query = '''
+                    UPDATE ''' + table + ''' 
+                    SET ''' + ','.join(map(lambda x, y: x + ' = ' + y, valuesz.keys(), valuesz.values())) + ''' 
+                    WHERE ''' + ' AND '.join(map(lambda x, y: x + '=' + repr(y), condition.keys(), condition.values()))
+                filelock.acquire()
+                execute(update_query)
+                filelock.release()
+                return {}, 200
+            return {}, 400
+
 
 class DBRead(Resource):
     def post(self):
@@ -189,27 +181,14 @@ class DBRead(Resource):
 class DBClear(Resource):
     def post(self):
         global filelock
-        tables = ["rides", "riders"]
+        tables = ["rides", "riders", "users"]
         for table in tables:
             delete_query = '''
             DELETE FROM ''' + table
             filelock.acquire()
             execute(delete_query)
             filelock.release()
-        return {}, 200
-
-class ReqCount(Resource):
-    def get(self):
-        query = '''SELECT * FROM APICOUNT'''
-        rows = fetchall(query)
-        if rows:
-            for row in rows:
-                return [row[0]], 200
-        else:
-            return [-100], 200 #Should never actually reach here. If it reaches here, database tables not set up properly.
-    def delete(self):
         query = '''UPDATE APICOUNT SET COUNT=0'''
-        global filelock
         filelock.acquire()
         execute(query)
         filelock.release()
@@ -219,14 +198,13 @@ class getDB(Resource):
     def get(self):
         global filelock
         filelock.acquire()
-        res =  send_file("persistent.db")
+        res = send_file("persistent.db")
         filelock.release()
         return res
 
 api.add_resource(DBWrite, '/internal/v1/db/write')
 api.add_resource(DBRead, '/internal/v1/db/read')
 api.add_resource(DBClear, '/internal/v1/db/clear')
-api.add_resource(ReqCount, '/internal/v1/_count')
 api.add_resource(getDB, '/internal/v1/getdb')
 
 if __name__ == '__main__':

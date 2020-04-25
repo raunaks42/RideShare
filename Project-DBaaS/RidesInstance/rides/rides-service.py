@@ -4,7 +4,7 @@ from flask import Flask, jsonify, request, current_app, abort
 from flask_restful import Api, Resource, reqparse
 import pandas as pd
 import flask_restful
-from requests import post,get
+from requests import post, get
 from werkzeug.exceptions import HTTPException
 import os
 
@@ -15,12 +15,30 @@ USER_URL = "http://users"  # Needs to be replaced with load balancer URL while d
 DB_URL = "http://orchestrator:9500"
 PUBLIC_IP_OF_RIDES = "http://localhost:8080"  # To set header for request to users service.
 
+
+@app.before_request
+def log_request_info():
+    if (request.path == '/api/v1/rides' or request.path.startswith('/api/v1/rides/')):
+        #  Increment Count
+        req = {
+            'query': 'update',
+            'table': 'apicount',
+            'values': {
+                'count': 'count + 1'
+            },
+            'condition': {
+                'service_name': "rides"
+            }
+        }
+        post(DB_URL + "/api/v1/db/write", json=req)
+
+
 @app.after_request
 def after(response):
     with open("rides_log.csv", 'a') as log:
         if os.stat("rides_log.csv").st_size == 0:
             print('Type;Path;Request Body;Incremented API Count?;Response Code;Response Body', file=log)
-        if request.path == '/api/v1/db/write' or request.path == '/api/v1/db/read' or request.path=='/':
+        if request.path == '/api/v1/db/write' or request.path == '/api/v1/db/read' or request.path == '/':
             pass
         else:
             print(request.method, end=";", file=log)
@@ -110,6 +128,7 @@ class RequestParser(reqparse.RequestParser):
 
         return namespace
 
+
 class Rides(Resource):
     def post(self):
         reqparser = RequestParser()
@@ -123,7 +142,7 @@ class Rides(Resource):
         source = args['source']
         destination = args['destination']
 
-        #Check for username
+        # Check for username
 
         res = get(USER_URL + "/api/v1/users", headers={"Origin": PUBLIC_IP_OF_RIDES})
         if res.status_code == 204:
@@ -134,9 +153,8 @@ class Rides(Resource):
             if user == created_by:
                 matched = True
                 break
-        if(not matched):
-            return {},400
-
+        if (not matched):
+            return {}, 400
 
         enum = pd.read_csv('AreaNameEnum.csv')
         if source in enum['Area No'] and destination in enum['Area No'] and source != destination:
@@ -215,23 +233,26 @@ class Ride(Resource):
         args = reqparser.parse_args(strict=True)  # 400 if any extra or less fields
         username = args['username']
 
-        # Check for username
-        res = get(USER_URL + "/api/v1/users", headers={"Origin":PUBLIC_IP_OF_RIDES})
+        # Get all usernames
+        res = get(USER_URL + "/api/v1/users", headers={"Origin": PUBLIC_IP_OF_RIDES})
 
+        # Checking if there are any usernames or not
         if res.status_code == 204:
-            return {}, 400  # no users
+            return {}, 400  # No usernames
 
+        # Checking if user requesting to join ride is a valid user
         matched = False
         for user in res.json():
             if user == username:
                 matched = True
                 break
         if (not matched):
-            return {}, 400
+            return {}, 400  # username not found in list of usernames
 
+        # Get details of ride being requested to join.
         req = {
             'table': 'rides',
-            'columns': ['rideId','created_by'],
+            'columns': ['rideId', 'created_by'],
             'condition': {
                 'rideId': id
             }
@@ -239,12 +260,11 @@ class Ride(Resource):
 
         res = post(DB_URL + "/api/v1/db/read", json=req)
 
-        #Checking if user trying to join is not same as one who created ride
         for ride in res.json():
-             if(ride["created_by"]==username):
-                 return {},400
+            if ride["created_by"] == username:  # user trying to join is ride creator
+                return {}, 400
 
-        if res.json():
+        if res.json():  # If this ride exists
             req = {
                 'table': 'rides',
                 'columns': ['created_by'],
@@ -262,8 +282,8 @@ class Ride(Resource):
                 }
             }
             resw = post(DB_URL + "/api/v1/db/write", json=req)
-            return {}, (200 if (
-                        resw.status_code == 200 and not resr.json()) else 400)  # 400 if user not found or user already joined ride or user is creator
+
+            return {}, (200 if (resw.status_code == 200) else 400)
         return {}, 204  # ride not found
 
     def delete(self, id):
@@ -297,6 +317,36 @@ class Ride(Resource):
         return {}, 400  # if request json not empty or ride not found
 
 
+class ReqCount(Resource):
+    def get(self):
+        req = {
+            'table': 'apicount',
+            'columns': ['count'],
+            'condition': {
+                'service_name': "rides"
+            }
+        }
+        res = post(DB_URL + "/api/v1/db/read", json=req)
+        for row in res.json():
+            return [row["count"]], 200
+        return {}, 503
+
+
+    def delete(self):
+        #  Reset Count to 0
+        req = {
+            'query': 'update',
+            'table': 'apicount',
+            'values': {
+                'count': '0'
+            },
+            'condition': {
+                'service_name': "rides"
+            }
+        }
+        res = post(DB_URL + "/api/v1/db/write", json=req)
+        return {}, res.status_code
+
 class RideCount(Resource):
     def get(self):
         req = {
@@ -307,18 +357,12 @@ class RideCount(Resource):
         for row in res.json():
             return [row["count(*)"]], 200
         return {}, 400
-        # Original
-        # query = '''SELECT COUNT(*) FROM RIDES'''
-        #rows = fetchall(query)
-        #if rows:
-        #    for row in rows:
-        #        return [row[0]], 200
 
 
 api.add_resource(Rides, '/api/v1/rides')
 api.add_resource(Ride, '/api/v1/rides/<int:id>')
+api.add_resource(ReqCount, '/api/v1/_count')
 api.add_resource(RideCount, '/api/v1/rides/count')
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=80, debug=True)

@@ -20,7 +20,7 @@ class DataBase:
 
         rides = Table('rides', metadata,
                       Column('rideId', Integer, autoincrement=True, primary_key=True),
-                      Column('created_by', String, nullable=False),
+                      Column('created_by', String, ForeignKey('users.username', ondelete='CASCADE'), nullable=False),
                       Column('timestamp', String, nullable=False),
                       Column('source', Integer, nullable=False),
                       Column('destination', Integer, nullable=False)
@@ -32,11 +32,12 @@ class DataBase:
 
         riders = Table('riders', metadata,
                        Column('rideId', None, ForeignKey('rides.rideId', ondelete='CASCADE'), primary_key=True),
-                       Column('user', String, primary_key=True)
+                       Column('user', String, ForeignKey('users.username', ondelete='CASCADE'), primary_key=True)
                        )
 
         apicount = Table('apicount', metadata,
-                         Column('count', Integer, primary_key=True, default=0))
+                         Column('service_name', String, primary_key=True),
+                         Column('count', Integer, default=0))
 
         try:
             metadata.create_all(self.db_engine)
@@ -79,5 +80,5 @@ fetchone = db.fetchone
 
 if __name__ == "__main__":
     db.create_db_tables()
-    execute('''INSERT INTO APICOUNT VALUES(0)''')
-    pass
+    execute('''INSERT INTO APICOUNT VALUES ('rides',0)''')
+    execute('''INSERT INTO APICOUNT VALUES ('users',0)''')

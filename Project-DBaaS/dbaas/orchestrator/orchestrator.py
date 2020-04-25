@@ -262,7 +262,8 @@ class CrashMaster(Resource):
         client = docker.from_env()
         cls = client.containers.list(filters={"ancestor": "worker"})
         for cont in cls:
-            res = get("http://" + cont.name + "/control/v1/getstatus")
+            ip_add = cont.attrs['NetworkSettings']['Networks']['dbaas-net']['IPAddress']
+            res = get("http://" + ip_add + "/control/v1/getstatus")
             app.logger.info(res)
             if res.json()[0] == JOB.MASTER.value:
                 # Get PID
@@ -282,7 +283,8 @@ class CrashSlave(Resource):
         max_pid_cont = None
         max_pid = -1
         for cont in cls:
-            res = get("http://" + cont.name + "/control/v1/getstatus")
+            ip_add = cont.attrs['NetworkSettings']['Networks']['dbaas-net']['IPAddress']
+            res = get("http://" + ip_add + "/control/v1/getstatus")
             if res.json()[0] == JOB.SLAVE.value:
                 # Get PID
                 d = dict(cont.top())
