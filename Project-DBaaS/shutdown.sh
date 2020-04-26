@@ -13,6 +13,7 @@ docker-compose down &> /dev/null
 docker stop users > /dev/null
 docker stop rides > /dev/null
 docker stop bunny > /dev/null
+docker stop zook > /dev/null
 echo "Step 1/2: Done."
 echo "Step 2/2: Removing spawned containers."
 if [[ $(docker container ps -aq --filter ancestor=worker) ]]; then

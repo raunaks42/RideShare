@@ -14,9 +14,19 @@ import docker
 import pika
 from flask import Flask, request
 from flask_restful import Api, Resource
-from requests import get
+from requests import get, post
 
 import enum
+import sys
+from kazoo.client import KazooClient
+
+zk = KazooClient(hosts='zook:2181')
+zk.start()
+if zk.exists('/slavecount'):
+    zk.delete('/slavecount')
+if zk.exists('/conts'):
+    zk.delete('/conts', recursive = True)
+zk.create('/slavecount')
 
 dictConfig({
     'version': 1,
@@ -52,8 +62,42 @@ class JOB(enum.Enum):
     SLAVE = 2
     SYNC = 3
 
+def watchmaster(event):
+    client = docker.from_env()
+    cls = client.containers.list(filters={"ancestor": "worker"})
+    min_pid_ip = None
+    min_pid = sys.maxsize
+    for cont in cls:
+        ip_add = cont.attrs['NetworkSettings']['Networks']['dbaas-net']['IPAddress']
+        res = get("http://" + ip_add + "/control/v1/getstatus")
+        if res.json()[0] == JOB.SLAVE.value:
+            d = dict(cont.top())
+            pid = int(d["Processes"][0][1])
+            if (pid < min_pid):
+                min_pid_ip = ip_add
+                min_pid = pid
+    if min_pid != sys.maxsize:
+        get("http://" + min_pid_ip + "/control/v1/stop")
+        res = post("http://" + min_pid_ip + "/control/v1/start", json = { 'job': JOB.MASTER.value, 'pid': min_pid })
+        if res.status_code != 200:
+            raise Exception("Setting container job did not succeed.")
+        zk.get('/conts/cont_' + str(min_pid), watch = watchmaster)
+        spawn_container(JOB.SLAVE)
+
+def watchslave(event):
+    time.sleep(2)
+    if not zk.exists(event.path):
+        cur_count = len(zk.get_children('/conts'))
+
+        data, stat = zk.get('/slavecount')
+        slavecount = int(data.decode("utf-8"))
+        if cur_count < slavecount:
+            spawn_container(JOB.SLAVE)
+        
+
 
 def spawn_container(job_id):
+    global zk
     client = docker.from_env()
     container = client.containers.run("worker", detach=True, network="dbaas-net")
     time.sleep(5)  # Wait till container starts up
@@ -68,16 +112,26 @@ def spawn_container(job_id):
     # For some reason does not work! Very weird behavior.
     # What's weirder is that if we give a custom name to the container while creating it,
     # then using container name here works?!
-
-    res = get("http://" + ip_add + "/control/v1/start/"+str(job_id.value))
+    d = dict(container.top())
+    pid = int(d["Processes"][0][1])
+    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    res = post("http://" + ip_add + "/control/v1/start", json = { 'job': job_id.value, 'pid': pid })
     if res.status_code != 200:
         raise Exception("Setting container job did not succeed.")
+    watchfun = None
+    if job_id.value == 1:
+        watchfun = watchmaster
+    elif job_id.value == 2:
+        watchfun = watchslave
+    zk.get('/conts/cont_' + str(pid), watch = watchfun)
     app.logger.info("Spawned Container with Job %s (IP: %s)", job_id, ip_add)
 
 
 def scaling():
     with counter.get_lock():
+        global zk
         no_of_slaves = int((counter.value-1)/20)+1
+        zk.set('/slavecount', str(no_of_slaves).encode('utf-8'))
         app.logger.info("Required no. of slaves: %s", no_of_slaves)
         client = docker.from_env()
         cls = client.containers.list(filters={"ancestor": "worker"})
@@ -253,7 +307,7 @@ class WorkerList(Resource):
         pids = []
         for cont in cls:
             d = dict(cont.top())
-            pids.append(d["Processes"][0][0])
+            pids.append(d["Processes"][0][1])
         return sorted(map(int, pids))
 
 
@@ -268,7 +322,7 @@ class CrashMaster(Resource):
             if res.json()[0] == JOB.MASTER.value:
                 # Get PID
                 d = dict(cont.top())
-                pid = int(d["Processes"][0][0])
+                pid = int(d["Processes"][0][1])
                 app.logger.info("Crash Master with PID: %s", pid)
                 # Crash Master
                 cont.remove(force=True)
@@ -288,7 +342,7 @@ class CrashSlave(Resource):
             if res.json()[0] == JOB.SLAVE.value:
                 # Get PID
                 d = dict(cont.top())
-                pid = int(d["Processes"][0][0])
+                pid = int(d["Processes"][0][1])
                 # Check if pid higher than max pid
                 if (pid > max_pid):
                     max_pid_cont = cont

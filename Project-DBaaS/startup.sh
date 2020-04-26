@@ -26,7 +26,7 @@ docker network ls | grep dbaas-net > /dev/null || docker network create dbaas-ne
 
 echo "Step 2/7: Done."
 
-echo "Step 3/7: Setting up RabbitMQ..."
+echo "Step 3/7: Setting up RabbitMQ and Zookeeper..."
 #Check if bunny is exists and is running.
 if ! docker container ls --all | grep bunny > /dev/null
 then
@@ -38,6 +38,21 @@ else
   then
     docker restart bunny > /dev/null # bunny container is in exited state, restart.
     echo "Taking a 10s pause while RabbitMQ starts.."
+    sleep 10
+  fi
+fi
+
+#Check if zook is exists and is running.
+if ! docker container ls --all | grep zook > /dev/null
+then
+  docker run -d --name zook --restart always --network dbaas-net zookeeper  > /dev/null # zook container doesn't exist at on system.
+  echo "Taking a 10s pause while Zookeeper starts.."
+  sleep 10
+else
+  if ! docker container ls | grep zook  > /dev/null
+  then
+    docker restart zook > /dev/null # zook container is in exited state, restart.
+    echo "Taking a 10s pause while Zookeeper starts.."
     sleep 10
   fi
 fi

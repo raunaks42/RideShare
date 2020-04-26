@@ -3,9 +3,14 @@ import subprocess
 from logging.config import dictConfig
 from threading import Lock
 import requests
-from flask import Flask
+from flask import Flask, request
 from flask_api import status
 from flask_restful import Api, Resource
+from kazoo.client import KazooClient
+
+contpid=None
+
+zk = KazooClient(hosts='zook:2181')
 
 dictConfig({
     'version': 1,
@@ -44,8 +49,12 @@ else:
 
 sychro = subprocess.Popen(["python3","./synchro.py"])
 class Start(Resource):
-    def get(self,job):
-        global job_type, mutex, listeners,app
+    def post(self):
+        global job_type, mutex, listeners, app, zk, contpid
+        args = request.get_json()
+        job = args['job']
+        pid = args['pid']
+        contpid = pid
         myjob = JOB.NONE
         mutex.acquire()
         if (job_type != JOB.NONE):
@@ -56,6 +65,8 @@ class Start(Resource):
             job_type = job_dict[job]
             myjob = job_type
         mutex.release()
+        zk.start()
+        zk.create('/conts/cont_' + str(pid), ephemeral = True, makepath = True)
         if (myjob == JOB.MASTER):
             app.logger.info('Starting Master')
             listeners[JOB.MASTER] = subprocess.Popen(["python3","./master.py"])    
@@ -66,7 +77,7 @@ class Start(Resource):
 
 class Stop(Resource):
     def get(self):
-        global job_type, mutex,listeners,app
+        global job_type, mutex,listeners,app, contpid, zk
         mutex.acquire()
         temp_job = None
         if (job_type == JOB.NONE):
@@ -82,6 +93,7 @@ class Stop(Resource):
         else:
             if (temp_job == JOB.SLAVE):
                 listeners[JOB.SLAVE].terminate()
+        zk.delete('/conts/cont_' + str(contpid))
         return status.HTTP_200_OK
 
 
@@ -91,7 +103,7 @@ class GetStatus(Resource):
         return [int(job_type.value)], status.HTTP_200_OK
 
 
-api.add_resource(Start, "/control/v1/start/<int:job>")
+api.add_resource(Start, "/control/v1/start")
 api.add_resource(Stop, "/control/v1/stop")
 api.add_resource(GetStatus, "/control/v1/getstatus")
 
