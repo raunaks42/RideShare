@@ -8,8 +8,6 @@ from flask_api import status
 from flask_restful import Api, Resource
 from kazoo.client import KazooClient
 
-contpid=None
-
 zk = KazooClient(hosts='zook:2181')
 
 dictConfig({
@@ -50,11 +48,10 @@ else:
 sychro = subprocess.Popen(["python3","./synchro.py"])
 class Start(Resource):
     def post(self):
-        global job_type, mutex, listeners, app, zk, contpid
+        global job_type, mutex, listeners, app, zk
         args = request.get_json()
         job = args['job']
         pid = args['pid']
-        contpid = pid
         myjob = JOB.NONE
         mutex.acquire()
         if (job_type != JOB.NONE):
@@ -65,8 +62,8 @@ class Start(Resource):
             job_type = job_dict[job]
             myjob = job_type
         mutex.release()
-        zk.start()
-        zk.create('/conts/cont_' + str(pid), ephemeral = True, makepath = True)
+        zk.start() #start session only when job assigned
+        zk.create('/conts/cont_' + str(pid), ephemeral = True, makepath = True) #ephemeral node deleted when session closed (crashed), makepath ensures /conts node is created first
         if (myjob == JOB.MASTER):
             app.logger.info('Starting Master')
             listeners[JOB.MASTER] = subprocess.Popen(["python3","./master.py"])    
@@ -77,7 +74,7 @@ class Start(Resource):
 
 class Stop(Resource):
     def get(self):
-        global job_type, mutex,listeners,app, contpid, zk
+        global job_type, mutex,listeners,app, zk
         mutex.acquire()
         temp_job = None
         if (job_type == JOB.NONE):
@@ -93,7 +90,7 @@ class Stop(Resource):
         else:
             if (temp_job == JOB.SLAVE):
                 listeners[JOB.SLAVE].terminate()
-        zk.delete('/conts/cont_' + str(contpid))
+        zk.stop() #close session, triggering watch on slave
         return status.HTTP_200_OK
 
 

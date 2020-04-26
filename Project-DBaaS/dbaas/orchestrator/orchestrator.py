@@ -22,10 +22,12 @@ from kazoo.client import KazooClient
 
 zk = KazooClient(hosts='zook:2181')
 zk.start()
+#if any nodes exist from previous run
 if zk.exists('/slavecount'):
     zk.delete('/slavecount')
 if zk.exists('/conts'):
     zk.delete('/conts', recursive = True)
+#create slavecount node with no data
 zk.create('/slavecount')
 
 dictConfig({
@@ -62,6 +64,7 @@ class JOB(enum.Enum):
     SLAVE = 2
     SYNC = 3
 
+#triggered when master node crashes
 def watchmaster(event):
     client = docker.from_env()
     cls = client.containers.list(filters={"ancestor": "worker"})
@@ -72,26 +75,28 @@ def watchmaster(event):
         res = get("http://" + ip_add + "/control/v1/getstatus")
         if res.json()[0] == JOB.SLAVE.value:
             d = dict(cont.top())
-            pid = int(d["Processes"][0][1])
+            pid = int(d["Processes"][0][2])
             if (pid < min_pid):
                 min_pid_ip = ip_add
                 min_pid = pid
+    #selection of lowest pid slave
     if min_pid != sys.maxsize:
-        get("http://" + min_pid_ip + "/control/v1/stop")
-        res = post("http://" + min_pid_ip + "/control/v1/start", json = { 'job': JOB.MASTER.value, 'pid': min_pid })
+        get("http://" + min_pid_ip + "/control/v1/stop") #remove role as slave
+        res = post("http://" + min_pid_ip + "/control/v1/start", json = { 'job': JOB.MASTER.value, 'pid': min_pid }) #change role to master
         if res.status_code != 200:
             raise Exception("Setting container job did not succeed.")
-        zk.get('/conts/cont_' + str(min_pid), watch = watchmaster)
-        spawn_container(JOB.SLAVE)
+        zk.get('/conts/cont_' + str(min_pid), watch = watchmaster) #set new watch on this node as master
+        spawn_container(JOB.SLAVE) #spawn new slave
 
+#triggered when slave crashes or role changes to master (deleted and recreated same znode)
 def watchslave(event):
-    time.sleep(2)
-    if not zk.exists(event.path):
-        cur_count = len(zk.get_children('/conts'))
+    time.sleep(2) #wait if slave is just being changed to master and not deleted
+    if not zk.exists(event.path): #only if deleted
+        cur_count = len(zk.get_children('/conts')) -1 #dont include master
 
         data, stat = zk.get('/slavecount')
         slavecount = int(data.decode("utf-8"))
-        if cur_count < slavecount:
+        if cur_count < slavecount: #spawn only if slaves dipped below number of required
             spawn_container(JOB.SLAVE)
         
 
@@ -113,17 +118,16 @@ def spawn_container(job_id):
     # What's weirder is that if we give a custom name to the container while creating it,
     # then using container name here works?!
     d = dict(container.top())
-    pid = int(d["Processes"][0][1])
-    #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    pid = int(d["Processes"][0][2]) #get pid of container
     res = post("http://" + ip_add + "/control/v1/start", json = { 'job': job_id.value, 'pid': pid })
     if res.status_code != 200:
         raise Exception("Setting container job did not succeed.")
-    watchfun = None
+    watchfun = None #set watch function according to job id
     if job_id.value == 1:
         watchfun = watchmaster
     elif job_id.value == 2:
         watchfun = watchslave
-    zk.get('/conts/cont_' + str(pid), watch = watchfun)
+    zk.get('/conts/cont_' + str(pid), watch = watchfun) #set watch on node
     app.logger.info("Spawned Container with Job %s (IP: %s)", job_id, ip_add)
 
 
@@ -131,7 +135,7 @@ def scaling():
     with counter.get_lock():
         global zk
         no_of_slaves = int((counter.value-1)/20)+1
-        zk.set('/slavecount', str(no_of_slaves).encode('utf-8'))
+        zk.set('/slavecount', str(no_of_slaves).encode('utf-8')) #set new value of slavecount
         app.logger.info("Required no. of slaves: %s", no_of_slaves)
         client = docker.from_env()
         cls = client.containers.list(filters={"ancestor": "worker"})
@@ -307,7 +311,7 @@ class WorkerList(Resource):
         pids = []
         for cont in cls:
             d = dict(cont.top())
-            pids.append(d["Processes"][0][1])
+            pids.append(d["Processes"][0][2])
         return sorted(map(int, pids))
 
 
@@ -322,7 +326,7 @@ class CrashMaster(Resource):
             if res.json()[0] == JOB.MASTER.value:
                 # Get PID
                 d = dict(cont.top())
-                pid = int(d["Processes"][0][1])
+                pid = int(d["Processes"][0][2])
                 app.logger.info("Crash Master with PID: %s", pid)
                 # Crash Master
                 cont.remove(force=True)
@@ -342,7 +346,7 @@ class CrashSlave(Resource):
             if res.json()[0] == JOB.SLAVE.value:
                 # Get PID
                 d = dict(cont.top())
-                pid = int(d["Processes"][0][1])
+                pid = int(d["Processes"][0][2])
                 # Check if pid higher than max pid
                 if (pid > max_pid):
                     max_pid_cont = cont
