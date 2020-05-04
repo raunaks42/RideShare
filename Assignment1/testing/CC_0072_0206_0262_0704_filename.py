@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-API_ENDPOINT = "http://localhost:4000"
+API_ENDPOINT = "http://rideshare-balancer-737325029.us-east-1.elb.amazonaws.com:80"
 
 #Test API call 1 - Add new user
 param_string_api1 = "payload, status, resp_body"
@@ -40,15 +40,15 @@ def test_api_remove_user(payload, username,status,resp_body):
 #Test API call 3 - Create a new ride
 param_string_api3 = "payload,status,resp_body"
 #existing user 201
-a = ({"created_by":"testing","timestamp":"08-03-2020:00-53-09","source":22,"destination":23},201,{})
+a = ({"created_by":"testing","timestamp":"08-05-2020:00-53-09","source":22,"destination":23},201,{})
 #non existing user 400
-b = ({"created_by":"nobody","timestamp":"08-03-2020:00-53-09","source":22,"destination":23},400,{})
+b = ({"created_by":"nobody","timestamp":"08-05-2020:00-53-09","source":22,"destination":23},400,{})
 #incorrect date format
 c = ({"created_by":"nobody","timestamp":"2020-01-26:00-53-09","source":22,"destination":23},400,{})
 #out of range src dst
-d = ({"created_by":"testing","timestamp":"08-03-2020:00-53-09","source":890,"destination":7836},400,{})
+d = ({"created_by":"testing","timestamp":"08-05-2020:00-53-09","source":890,"destination":7836},400,{})
 #same src dst
-e = ({"created_by":"testing","timestamp":"08-03-2020:00-53-09","source":22,"destination":22},400,{})
+e = ({"created_by":"testing","timestamp":"08-05-2020:00-53-09","source":22,"destination":22},400,{})
 #missing fields
 f = ({"created_by":"testing","source":22,"destination":23},400,{})
 #empty body
@@ -110,7 +110,7 @@ b = ({"username":"t1"},5,204,{})
 #non existing user and existing ride id 400
 c = ({"username":"blehblehbleh"},1,400,{})
 #non existing user and non existing ride id 400
-d = ({"username":"blehblehbleh"},5,204,{})
+d = ({"username":"blehblehbleh"},50,400,{})
 #empty requestbody 400
 e = ({},1,400,{})
 #user already in ride 400
