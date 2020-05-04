@@ -12,9 +12,25 @@ app = Flask(__name__)
 api = Api(app)
 
 USER_URL = "http://users"  # Needs to be replaced with load balancer URL while deploying
-DB_URL = "http://orchestrator:9500"
-PUBLIC_IP_OF_RIDES = "http://localhost:8080"  # To set header for request to users service.
+if (os.getenv("BALANCER") != None):
+    USER_URL = "http://"+os.getenv("BALANCER")
+    print("USER MODE SET TO CLOUD DEPLOYMENT")
+else:
+    print("USER MODE SET TO LOCAL DEPLOYMENT")
 
+DB_URL = "http://orchestrator:9500"
+if (os.getenv("ORCHHOST") != None and os.getenv("ORCHPORT") != None):
+    DB_URL = "http://"+os.getenv("ORCHHOST")+":"+os.getenv("ORCHPORT")
+    print("DB MODE SET TO CLOUD DEPLOYMENT")
+else:
+    print("DB MODE SET TO LOCAL DEPLOYMENT")
+    
+PUBLIC_IP_OF_RIDES = "http://localhost:8080"  # To set header for request to users service.
+if (os.getenv("MYHOST") != None and os.getenv("MYPORT") != None):
+    PUBLIC_IP_OF_RIDES = "http://"+os.getenv("MYHOST")+":"+os.getenv("MYPORT")
+    print("HEADER MODE SET TO CLOUD DEPLOYMENT")
+else:
+    print("HEADER MODE SET TO LOCAL DEPLOYMENT")
 
 @app.before_request
 def log_request_info():
@@ -358,10 +374,14 @@ class RideCount(Resource):
             return [row["count(*)"]], 200
         return {}, 400
 
+class Health(Resource):
+    def get(self):
+        return 200
 
+api.add_resource(Health, '/');
 api.add_resource(Rides, '/api/v1/rides')
 api.add_resource(Ride, '/api/v1/rides/<int:id>')
-api.add_resource(ReqCount, '/api/v1/_count')
+api.add_resource(ReqCount, '/api/v1/rides/_count')
 api.add_resource(RideCount, '/api/v1/rides/count')
 
 if __name__ == '__main__':
