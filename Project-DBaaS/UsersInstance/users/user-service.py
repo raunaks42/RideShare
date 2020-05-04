@@ -11,6 +11,11 @@ app = Flask(__name__)
 api = Api(app)
 
 DB_URL = "http://orchestrator:9500"
+if (os.getenv("ORCHHOST") != None and os.getenv("ORCHPORT") != None):
+    DB_URL = "http://"+os.getenv("ORCHHOST")+":"+os.getenv("ORCHPORT")
+    print("MODE SET TO CLOUD DEPLOYMENT")
+else:
+    print("MODE SET TO LOCAL DEPLOYMENT")
 
 
 @app.before_request
@@ -210,10 +215,15 @@ class ReqCount(Resource):
         }
         res = post(DB_URL + "/api/v1/db/write", json=req)
         return {}, res.status_code
+    
+class Health(Resource):
+    def get(self):
+        return 200
 
+api.add_resource(Health, '/');
 api.add_resource(Users, '/api/v1/users')
 api.add_resource(User, '/api/v1/users/<string:username>')
-api.add_resource(ReqCount, '/api/v1/_count')
+api.add_resource(ReqCount, '/api/v1/users/_count')
 
 
 if __name__ == '__main__':
