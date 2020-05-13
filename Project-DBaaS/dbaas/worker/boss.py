@@ -45,7 +45,7 @@ if (db.status_code == 200):
 else:
     app.logger.info("ERROR: Unable to retrieve DB")
 
-sychro = subprocess.Popen(["python3","./synchro.py"])
+sychro = subprocess.Popen(["python3","./synchro.py"]) #start synchronisation subprocess
 class Start(Resource):
     def post(self):
         global job_type, mutex, listeners, app, zk
@@ -66,30 +66,30 @@ class Start(Resource):
         zk.create('/conts/cont_' + str(pid), ephemeral = True, makepath = True) #ephemeral node deleted when session closed (crashed), makepath ensures /conts node is created first
         if (myjob == JOB.MASTER):
             app.logger.info('Starting Master')
-            listeners[JOB.MASTER] = subprocess.Popen(["python3","./master.py"])    
+            listeners[JOB.MASTER] = subprocess.Popen(["python3","./master.py"])    # launch master subprocess
         elif (myjob == JOB.SLAVE):
             app.logger.info("Starting Slave")
-            listeners[JOB.SLAVE] = subprocess.Popen(["python3","./slave.py"]) 
+            listeners[JOB.SLAVE] = subprocess.Popen(["python3","./slave.py"])  # launch slave subprocess
         return status.HTTP_200_OK
 
 class Stop(Resource):
     def get(self):
         global job_type, mutex,listeners,app, zk
-        mutex.acquire()
+        mutex.acquire() #mutex to protect against concurrent edits
         temp_job = None
         if (job_type == JOB.NONE):
             #not started return 403 forbidden
-            mutex.release()
+            mutex.release() 
             return status.HTTP_403_FORBIDDEN
         else:
             temp_job = job_type
             job_type = JOB.NONE
         mutex.release()
         if (temp_job == JOB.MASTER):
-            listeners[JOB.MASTER].terminate()
+            listeners[JOB.MASTER].terminate() #terminate the subprocess
         else:
             if (temp_job == JOB.SLAVE):
-                listeners[JOB.SLAVE].terminate()
+                listeners[JOB.SLAVE].terminate() #terminate the subprocess
         zk.stop() #close session, triggering watch on slave
         return status.HTTP_200_OK
 

@@ -177,7 +177,7 @@ def start_timer():
     atexit.register(lambda: scheduler.shutdown())
 
 
-class ReadRpcClient(object):
+class ReadRpcClient(object): #Reading API call
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
         self.channel = self.connection.channel()
@@ -185,13 +185,14 @@ class ReadRpcClient(object):
         self.callback_queue = result.method.queue
         self.channel.basic_consume(queue=self.callback_queue, on_message_callback=self.on_response, auto_ack=True)
 
-    def on_response(self, ch, method, props, body):
+    def on_response(self, ch, method, props, body): #upon response of a message callback
         if self.corr_id == props.correlation_id:
             self.response = json.loads(body)
 
     def call(self, request):
         self.response = None
         self.corr_id = str(uuid.uuid4())
+        #publish onto the readQ with a reply_to queue (required since this is an RPC)
         self.channel.basic_publish(
             exchange='',
             routing_key='readQ',
@@ -202,19 +203,19 @@ class ReadRpcClient(object):
             body=json.dumps(request))
         retries = 0
         while self.response is None:
-            if (retries == 5):
+            if (retries == 5): #if unable to get a response within 5 retries, consider non available worker and return 503
                 break
             retries += 1
-            self.connection.process_data_events()
-            time.sleep(0.5 * retries)
+            self.connection.process_data_events() #continue with any other events to process
+            time.sleep(0.5 * retries) #back off for the RPC
 
         if (self.response):
-            return self.response["data"], self.response["status"]
+            return self.response["data"], self.response["status"] #return data to client
         else:
             return {}, 503  # service unavailable
 
 
-class WriteRpcClient(object):
+class WriteRpcClient(object): #write API call
     def __init__(self):
         self.connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
         self.channel = self.connection.channel()
@@ -230,6 +231,7 @@ class WriteRpcClient(object):
 
         self.response = None
         self.corr_id = str(uuid.uuid4())
+        #publish message to the writeQ (needs a reply_to since this is an RPC)
         self.channel.basic_publish(
             exchange='',
             routing_key='writeQ',
@@ -240,13 +242,13 @@ class WriteRpcClient(object):
             body=json.dumps(request))
         retries = 0
         while self.response is None:
-            if (retries == 5):
+            if (retries == 5): #try 5 times before quitting
                 break
             retries += 1
             self.connection.process_data_events()
-            time.sleep(0.5 * retries)
+            time.sleep(0.5 * retries) #backoff for waiting time
         if (self.response):
-            return self.response["data"], self.response["status"]
+            return self.response["data"], self.response["status"] #return data to the client
         else:
             return {}, 503  # service unavailable
 
@@ -277,7 +279,7 @@ class DBWrite(Resource):
         # write request received, add to the writeQ
 
         writer = WriteRpcClient()
-        response = writer.call(request.get_json())
+        response = writer.call(request.get_json()) # RPC
         return response
 
 
@@ -291,7 +293,7 @@ class DBRead(Resource):
             app.logger.info("Read API Count: %s", counter.value)
 
         reader = ReadRpcClient()
-        response = reader.call(request.get_json())
+        response = reader.call(request.get_json()) #RPC
         return response
 
 
@@ -300,7 +302,7 @@ class DBClear(Resource):
         # clear request (write), add to the writeQ
         data = {"query": "clear"}
         writer = WriteRpcClient()
-        response = writer.call(data)
+        response = writer.call(data) #RPC
         return response
 
 

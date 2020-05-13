@@ -17,8 +17,8 @@ def do_master_work(ch, method, properties, body):
         #send message to syncQ
         print("SYNCHRONIZE")
         sync_channel.basic_publish(exchange='syncQ',routing_key='',body = json.dumps(output_structure))
-    ch.basic_publish(exchange='',routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = properties.correlation_id),body=json.dumps({"data":result.json(),"status":result.status_code}))
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+    ch.basic_publish(exchange='',routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = properties.correlation_id),body=json.dumps({"data":result.json(),"status":result.status_code})) #uses reply_to to send it back to the RPC
+    ch.basic_ack(delivery_tag=method.delivery_tag) #Acknowledge the message
 
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
@@ -26,6 +26,6 @@ write_channel = connection.channel()
 write_channel.queue_declare("writeQ")
 write_channel.basic_consume(queue = 'writeQ', on_message_callback = do_master_work)
 sync_channel = connection.channel()
-sync_channel.exchange_declare(exchange = "syncQ",exchange_type='fanout')
+sync_channel.exchange_declare(exchange = "syncQ",exchange_type='fanout') #fanout exhange to allow multiple consumers to get the message
 print("MASTER",file=sys.stdout)
 write_channel.start_consuming()

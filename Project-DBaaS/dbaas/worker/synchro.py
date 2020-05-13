@@ -20,7 +20,7 @@ def do_synchronize(ch,method,properties,body):
             VALUES = action["values"]
         db_write(QUERY,TABLE,VALUES,CONDITION)
 
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+    ch.basic_ack(delivery_tag=method.delivery_tag) #Acknowledge the message
 
 def db_clear():
     tables = ["rides", "riders", "users"]
@@ -65,7 +65,7 @@ def db_write(query,table,values=None,condition=None):
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
 sync_channel = connection.channel()
 r = sync_channel.queue_declare("",exclusive=True)
-sync_channel.exchange_declare(exchange = "syncQ",exchange_type='fanout')
+sync_channel.exchange_declare(exchange = "syncQ",exchange_type='fanout') #fanout exchange to allow multiple consumers to receive the message simultaneously
 sync_channel.queue_bind(exchange='syncQ',queue=r.method.queue,routing_key='')
 sync_channel.basic_consume(queue = r.method.queue, on_message_callback = do_synchronize)
 print("SYNCHRO")

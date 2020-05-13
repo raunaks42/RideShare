@@ -27,16 +27,14 @@ def do_slave_work(ch, method, properties, body):
     else:
         result = db_read(request["table"],request['columns'])
     output_structure = {'status':result[1],'data':result[0]}
-    #response_channel.basic_publish(exchange='',routing_key='responseQ', body=json.dumps(output_structure))
+    #publish the output to the reply_to queue (RPC) in order to return data
     ch.basic_publish(exchange='',routing_key=properties.reply_to,properties=pika.BasicProperties(correlation_id = properties.correlation_id),body=json.dumps(output_structure))
-    ch.basic_ack(delivery_tag=method.delivery_tag)
+    ch.basic_ack(delivery_tag=method.delivery_tag) #Acknowledge the message
 
 
 connection = pika.BlockingConnection(pika.ConnectionParameters(host='bunny'))
 read_channel = connection.channel()
 read_channel.queue_declare("readQ")
 read_channel.basic_consume(queue = 'readQ', on_message_callback = do_slave_work)
-#response_channel = connection.channel()
-#response_channel.queue_declare("responseQ")
 print("SLAVE",file=sys.stdout)
 read_channel.start_consuming()
