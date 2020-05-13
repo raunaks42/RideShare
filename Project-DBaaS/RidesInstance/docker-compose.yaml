@@ -7,13 +7,14 @@ services:
     volumes:
       - ./rides:/app
     expose:
-      - 8201
+      - 80
     ports:
-      - 8201:80
+      - 80:80
     container_name: rides
     environment:
       - TEAM_NAME=CC_0072_0206_0262_0704
-networks:
-  default:
-    external:
-      name: dbaas-net
+      - ORCHHOST=ec2-35-153-161-27.compute-1.amazonaws.com
+      - ORCHPORT=80
+      - MYHOST=ec2-52-201-242-178.compute-1.amazonaws.com
+      - MYPORT=80
+      - BALANCER=rideshare-balancer-737325029.us-east-1.elb.amazonaws.com

@@ -7,13 +7,11 @@ services:
     volumes:
       - ./users:/app
     expose:
-      - 8200
+      - 80
     ports:
-      - 8200:80
+      - 80:80
     container_name: users
     environment:
       - TEAM_NAME=CC_0072_0206_0262_0704
-networks:
-  default:
-    external:
-      name: dbaas-net
+      - ORCHHOST=ec2-35-153-161-27.compute-1.amazonaws.com
+      - ORCHPORT=80

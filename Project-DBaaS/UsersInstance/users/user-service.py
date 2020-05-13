@@ -22,18 +22,20 @@ else:
 def log_request_info():
     if request.path == '/api/v1/users' or request.path.startswith('/api/v1/users/'):
         #  Increment Count
-        req = {
-            'query': 'update',
-            'table': 'apicount',
-            'values': {
-                'count': 'count + 1'
-            },
-            'condition': {
-                'service_name': "users"
-            }
-        }
-        post(DB_URL + "/api/v1/db/write", json=req)
-
+        #req = {
+            #'query': 'update',
+            #'table': 'apicount',
+            #'values': {
+                #'count': 'count + 1'
+            #},
+            #'condition': {
+                #'service_name': "users"
+            #}
+        #}
+        #post(DB_URL + "/api/v1/db/write", json=req)
+        #Update file with new API Count
+        with open("api_count.txt",'r+') as f:
+            f.write(int(f.read())+1)
 
 @app.after_request
 def after(response):
