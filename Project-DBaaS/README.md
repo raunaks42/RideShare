@@ -1,35 +1,39 @@
-## RideShare Project
+## RideShare Project - Cloud Ready
 [Project Specifications](https://d1b10bmlvqabco.cloudfront.net/attach/k4vbpy4o35q1ci/jzb6kq5w25w4tm/k8py84sv1rlm/DBaaS__AMQP.pdf) 
 
-#### Building on local machine
-##### Instructions
-- Start docker service
-- Execute the setup script ```startup.sh```
-    - Setup script builds and runs everything required. This will take a few minutes.
-    - If you have no errors, RideShare is up and running!
+## Cloud Deployment
 
-Use the following Postman Collection to test the RideShare APIs,
+### User's VM
 
-[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/c85f03faaffd465ae505)
+1. Copy the `UsersInstance` folder into the Users VM.
 
+2. Open the `docker-compose.yml` present inside the folder.
 
-##### Making changes 
-If you make any changes, run ```startup.sh``` again to restart. (shutting down is not required.)
+3. Update the `ORCHHOST` environment variable to either the DNS Entry or the IP address of the Orchestrator VM.
 
-##### Shutting down
-- The shutdown script stops all containers (+ it removes the temporary worker containers spawned during scaling)
-      
-##### Auto Scaling
-The orchestrator keeps track of the number of read requests in every 2 min.
-- 0 – 20 requests – 1 slave container is running
-- 21 – 40 requests – 2 slave containers are running
-- 41 – 60 requests – 3 slave containers are running
+4.  Install docker-compose and run:
 
-and so on.
+   `docker-compose up -d`
 
-To test this and make requests quickly, you can use the ```./dbaas/scale_up.sh``` script. This makes 21 async read calls.
+### Rides VM
 
+1. Copy the `RidesInstance` folder into the Rides VM.
 
-##### Debug Issues
-- If you face issues in the setup, try executing the commands in the ```startup.sh``` one by one manually
-to identify the cause of the issue.
+2. Open the `docker-compose.yml` present inside the folder.
+
+3. Update the `ORCHHOST` environment variable to either the DNS Entry or the IP address of the Orchestrator VM.
+
+4. Update the `MYHOST` environment variable to either the DNS Entry or the IP address of the Rides VM.
+
+5. Update the `BALANCER` environment variable to the DNS entry of the path based load balancer.
+
+6. Install docker-compose and run:
+
+   `docker-compose up -d`
+
+### Orchestrator VM
+
+1. Copy the `dbaas` folder into the Orchestrator VM.
+2. Copy the startup script `startup.sh` to the same directory as the folder.
+3. Execute the script using bash to automatically perform all the needed tasks to deploy the orchestrator.
+
