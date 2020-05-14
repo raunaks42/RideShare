@@ -75,7 +75,7 @@ def watchmaster(event):
         res = get("http://" + ip_add + "/control/v1/getstatus")
         if res.json()[0] == JOB.SLAVE.value:
             d = dict(cont.top())
-            pid = int(d["Processes"][0][2])
+            pid = int(d["Processes"][0][2]) if d["Processes"][0][0] == "root" else int(d["Processes"][0][0])
             if (pid < min_pid):
                 min_pid_ip = ip_add
                 min_pid = pid
@@ -118,7 +118,8 @@ def spawn_container(job_id):
     # What's weirder is that if we give a custom name to the container while creating it,
     # then using container name here works?!
     d = dict(container.top())
-    pid = int(d["Processes"][0][2]) #get pid of container
+    pid = int(d["Processes"][0][2]) if d["Processes"][0][0] == "root" else int(d["Processes"][0][0])
+
     res = post("http://" + ip_add + "/control/v1/start", json = { 'job': job_id.value, 'pid': pid })
     if res.status_code != 200:
         raise Exception("Setting container job did not succeed.")
@@ -313,7 +314,7 @@ class WorkerList(Resource):
         pids = []
         for cont in cls:
             d = dict(cont.top())
-            pids.append(d["Processes"][0][2])
+            pids.append(int(d["Processes"][0][2]) if d["Processes"][0][0] == "root" else int(d["Processes"][0][0]))
         return sorted(map(int, pids))
 
 
@@ -328,7 +329,7 @@ class CrashMaster(Resource):
             if res.json()[0] == JOB.MASTER.value:
                 # Get PID
                 d = dict(cont.top())
-                pid = int(d["Processes"][0][2])
+                pid = int(d["Processes"][0][2]) if d["Processes"][0][0] == "root" else int(d["Processes"][0][0])
                 app.logger.info("Crash Master with PID: %s", pid)
                 # Crash Master
                 cont.remove(force=True)
@@ -348,7 +349,7 @@ class CrashSlave(Resource):
             if res.json()[0] == JOB.SLAVE.value:
                 # Get PID
                 d = dict(cont.top())
-                pid = int(d["Processes"][0][2])
+                pid = int(d["Processes"][0][2]) if d["Processes"][0][0] == "root" else int(d["Processes"][0][0])
                 # Check if pid higher than max pid
                 if (pid > max_pid):
                     max_pid_cont = cont
