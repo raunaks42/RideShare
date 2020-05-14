@@ -17,4 +17,11 @@ RideShare can be tested on your local machine, but it is intended to be deployed
 Depending on the usage, there are two branches present,
 <li> <b>master</b> : Suitable for running RideShare on 1 instance. </li>
 <li> <b>cloud-ready</b> : Slight changes making it easier to deploy to the cloud across 3 VM instances. </li>
+
+#### Team
+CC_0072_0206_0262_0704
+<li> PES1201700072 Raunak Sengupta </li>
+<li> PES1201700206 Sai Prashanth R S </li>
+<li> PES1201700262 Yash Pradhan </li>
+<li> PES1201700704 Vishwas Rajashekar </li>
  
